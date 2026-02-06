@@ -90,6 +90,38 @@ function Stars({ rating, max = 5 }) {
 const totalQty = (item) => item.transactions.reduce((s, t) => s + t.quantity, 0);
 const totalCost = (item) => item.transactions.reduce((s, t) => s + t.price * t.quantity, 0);
 const avgPrice = (item) => { const q = totalQty(item); return q > 0 ? totalCost(item) / q : 0; };
+
+// Calculate real P&L considering actual sales
+const getItemPnL = (item) => {
+  const avg = avgPrice(item);
+  const qty = totalQty(item);
+  const hasSales = item.sold && item.sold.length > 0;
+
+  if (!hasSales) {
+    // No sales: use estimated current price
+    return (item.currentPrice - avg) * qty;
+  }
+
+  // Has sales: calculate realized + unrealized P&L
+  const soldQty = item.sold.reduce((s, sale) => s + sale.quantity, 0);
+  const soldRevenue = item.sold.reduce((s, sale) => s + sale.netAmount, 0);
+  const soldCost = avg * soldQty;
+  const realizedPnL = soldRevenue - soldCost;
+
+  const remainingQty = qty - soldQty;
+  const unrealizedPnL = remainingQty > 0 ? (item.currentPrice - avg) * remainingQty : 0;
+
+  return realizedPnL + unrealizedPnL;
+};
+
+const getItemPnLPct = (item) => {
+  const cost = totalCost(item);
+  if (cost <= 0) return 0;
+  const pnl = getItemPnL(item);
+  return (pnl / cost) * 100;
+};
+
+// Legacy function for display (uses current price only)
 const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((item.currentPrice - avg) / avg) * 100).toFixed(1) : "0.0"; };
 
 function TypeBadge({ type }) {
@@ -370,11 +402,12 @@ function WalletTab({ items, setItems, events }) {
 
   const totalBuy = items.reduce((s, i) => s + totalCost(i), 0);
   const totalCur = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
-  const totalPnL = totalCur - totalBuy;
-  const totalPnLPct = totalBuy > 0 ? ((totalPnL / totalBuy) * 100).toFixed(1) : "0.0";
+  // Calculate real total P&L (including sales)
+  const totalRealPnL = items.reduce((s, i) => s + getItemPnL(i), 0);
+  const totalPnLPct = totalBuy > 0 ? ((totalRealPnL / totalBuy) * 100).toFixed(1) : "0.0";
   const maxVal = Math.max(...items.map((i) => i.currentPrice * totalQty(i)), 1);
 
-  // Advanced stats
+  // Advanced stats - use real P&L (sales > estimated)
   const realizedPnL = items.reduce((s, i) => {
     if (!i.sold || i.sold.length === 0) return s;
     const soldRevenue = i.sold.reduce((r, sale) => r + sale.netAmount, 0);
@@ -383,14 +416,15 @@ function WalletTab({ items, setItems, events }) {
     return s + (soldRevenue - soldCost);
   }, 0);
 
+  // Best/worst use REAL P&L % (actual sales take priority over estimates)
   const bestItem = items.length > 0 ? items.reduce((best, item) => {
-    const pct = Number(itemPnLPct(item));
-    return pct > Number(itemPnLPct(best)) ? item : best;
+    const pct = getItemPnLPct(item);
+    return pct > getItemPnLPct(best) ? item : best;
   }, items[0]) : null;
 
   const worstItem = items.length > 0 ? items.reduce((worst, item) => {
-    const pct = Number(itemPnLPct(item));
-    return pct < Number(itemPnLPct(worst)) ? item : worst;
+    const pct = getItemPnLPct(item);
+    return pct < getItemPnLPct(worst) ? item : worst;
   }, items[0]) : null;
 
   const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
@@ -416,7 +450,7 @@ function WalletTab({ items, setItems, events }) {
           <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 2 }}>VALEUR TOTALE</div>
           <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
           <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
-            <span style={{ background: totalPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "4px 10px", borderRadius: 6 }}>{totalPnL >= 0 ? "+" : ""}{fmt(totalPnL)} ({totalPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
+            <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "4px 10px", borderRadius: 6 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
             <span style={{ opacity: 0.5, fontSize: 11 }}>{fmt(totalBuy)} investis</span>
           </div>
         </div>
@@ -426,8 +460,8 @@ function WalletTab({ items, setItems, events }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
         {[
           { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
-          { label: "En profit", value: items.filter((i) => i.currentPrice >= avgPrice(i)).length, color: "#16a34a" },
-          { label: "En perte", value: items.filter((i) => i.currentPrice < avgPrice(i)).length, color: "#dc2626" },
+          { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
+          { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
         ].map((s) => (
           <div key={s.label} style={{ background: P.card, borderRadius: 10, padding: "12px 8px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
@@ -440,18 +474,18 @@ function WalletTab({ items, setItems, events }) {
       {items.length > 0 && (
         <Card style={{ marginBottom: 18, padding: "12px 14px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            {bestItem && (
+            {bestItem && getItemPnLPct(bestItem) > 0 && (
               <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                 <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Meilleur investissement</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>+{itemPnLPct(bestItem)}%</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
               </div>
             )}
-            {worstItem && Number(itemPnLPct(worstItem)) < 0 && (
+            {worstItem && getItemPnLPct(worstItem) < 0 && (
               <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                 <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Pire investissement</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>{itemPnLPct(worstItem)}%</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
               </div>
             )}
             {hasAnySales && (
@@ -467,7 +501,9 @@ function WalletTab({ items, setItems, events }) {
       {/* Items */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
         {items.map((item) => {
-          const isUp = item.currentPrice >= avgPrice(item);
+          const realPnL = getItemPnL(item);
+          const realPnLPct = getItemPnLPct(item);
+          const isUp = realPnL >= 0;
           const hasSales = item.sold && item.sold.length > 0;
           const soldQty = hasSales ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
           const remainingQty = totalQty(item) - soldQty;
@@ -489,8 +525,8 @@ function WalletTab({ items, setItems, events }) {
                   <div style={{ fontSize: 10, color: P.soft, marginTop: 4 }}>{totalQty(item)} unité{totalQty(item) > 1 ? "s" : ""} · {item.transactions.length} achat{item.transactions.length > 1 ? "s" : ""} · moy. {fmt(avgPrice(item))}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{fmt(item.currentPrice)}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626", marginTop: 2 }}>{isUp ? "+" : ""}{itemPnLPct(item)}%</div>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>{hasSales && isFullySold ? fmt(realPnL + totalCost(item)) : fmt(item.currentPrice)}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626", marginTop: 2 }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
                 </div>
                 <div style={{ color: P.soft, fontSize: 16, flexShrink: 0 }}>›</div>
               </div>
