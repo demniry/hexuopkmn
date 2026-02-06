@@ -17,29 +17,10 @@ const today = () => new Date().toISOString().split("T")[0];
 // INITIAL DATA
 // ═══════════════════════════════════════════════════════════
 const INIT = {
-  items: [
-    { id: 1, name: "UPC Sulfura – Team Rocket", type: "Ultra Premium Collection", currentPrice: 410, transactions: [{ id: 101, date: "2025-12-19", price: 320, quantity: 1, source: "Auchan" }] },
-    { id: 2, name: "Bundle Evolutions Prismatiques", type: "Bundle", currentPrice: 240, transactions: [{ id: 201, date: "2025-11-10", price: 180, quantity: 1, source: "Amazon" }, { id: 202, date: "2025-12-05", price: 195, quantity: 1, source: "eBay" }] },
-    { id: 3, name: "Bundle Flammes Blanches", type: "Bundle", currentPrice: 142, transactions: [{ id: 301, date: "2025-12-01", price: 150, quantity: 1, source: "Carrefour" }] },
-  ],
-  events: [
-    { id: 1, title: "Sortie: Mega Evolution – Phantasmal Flames", date: "2026-02-14", type: "release", note: "Nouveau set très attendu, on surveille les prix de pré-commande" },
-    { id: 2, title: "Brocante Perrache", date: "2026-02-08", type: "brocante", note: "Bonne brocante, arriver avant 9h pour les meilleurs lots" },
-    { id: 3, title: "Salon du Collectible – Lyon", date: "2026-03-15", type: "event", note: "Grand salon, budget 100€ max" },
-    { id: 4, title: "Sortie: Scarlet & Violet – Next Wave", date: "2026-03-01", type: "release", note: "" },
-  ],
-  spots: [
-    { id: 1, name: "Gamemania – Part Dieu", type: "magasin", rating: 4, note: "Bon stock en général, prix un peu élevés mais personnel connaît le marché. Utile pour les dernières sorties." },
-    { id: 2, name: "eBay France", type: "online", rating: 5, note: "Meilleure source pour les sealed products. Utiliser les filtres 'acheter maintenant' + vendeur évalué." },
-    { id: 3, name: "Brocante Perrache", type: "brocante", rating: 3, note: "Très variable selon les semaines. Mieux vaut y aller tôt, avant 9h." },
-    { id: 4, name: "Carrefour City – Massoury", type: "magasin", rating: 2, note: "Rarement en stock, prix officiels. Utile en dépannage uniquement." },
-  ],
-  resources: [
-    { id: 1, title: "Pulling a Charizard VSTAR - Pack Opening", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", type: "video", note: "Vidéo super bien filmée, la qualité de présentation est inspirante pour un futur projet" },
-    { id: 2, title: "Le marché des sealed products en 2025", url: "https://example.com/article-sealed-products", type: "article", note: "Analyse claire de l'évolution des prix. Le point sur les UPC est particulièrement utile" },
-    { id: 3, title: "Tips pour acheter des cartes sur eBay sans se faire avoir", url: "https://twitter.com/pokecollector/status/123456", type: "tweet", note: "Conseils pratiques, notamment sur comment vérifier l'authenticité avant d'enchérir" },
-    { id: 4, title: "Guide complet: Investir dans les Pokémon cards", url: "https://example.com/guide-investissement", type: "article", note: "" },
-  ],
+  items: [],
+  events: [],
+  spots: [],
+  resources: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -253,11 +234,22 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   );
 }
 
-function WalletTab({ items, setItems }) {
+function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
+
+  // Get releases sorted by date (most recent first), grouped by year
+  const releasesByYear = useMemo(() => {
+    const releases = events.filter((e) => e.type === "release").sort((a, b) => new Date(b.date) - new Date(a.date));
+    return releases.reduce((acc, ev) => {
+      const year = new Date(ev.date + "T12:00:00").getFullYear();
+      if (!acc[year]) acc[year] = [];
+      acc[year].push(ev);
+      return acc;
+    }, {});
+  }, [events]);
 
   const totalBuy = items.reduce((s, i) => s + totalCost(i), 0);
   const totalCur = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
@@ -287,7 +279,7 @@ function WalletTab({ items, setItems }) {
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
             <span style={{ background: totalPnL >= 0 ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)", padding: "3px 10px", borderRadius: 20 }}>{totalPnL >= 0 ? "+" : ""}{fmt(totalPnL)} ({totalPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-            <span style={{ opacity: 0.6, fontSize: 10 }}>vs. {fmt(totalBuy)}</span>
+            <span style={{ opacity: 0.6, fontSize: 10 }}>{fmt(totalBuy)} investis</span>
           </div>
         </div>
       </div>
@@ -342,6 +334,54 @@ function WalletTab({ items, setItems }) {
       {!showForm ? <AddButton onClick={() => setShowForm(true)} /> : (
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Nouvel item</div>
+
+          {/* Releases timeline */}
+          {Object.keys(releasesByYear).length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, display: "block", marginBottom: 8 }}>Sorties récentes (cliquer pour sélectionner)</label>
+              <div style={{ maxHeight: 180, overflowY: "auto", background: "#faf8fd", borderRadius: 12, padding: 10 }}>
+                {Object.entries(releasesByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearEvents]) => (
+                  <div key={year} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: P.a1, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: P.a1 }} />
+                      {year}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 14, borderLeft: `2px solid ${P.a1}20`, marginLeft: 3 }}>
+                      {yearEvents.map((ev) => {
+                        const d = new Date(ev.date + "T12:00:00");
+                        const monthLabel = d.toLocaleDateString("fr-FR", { month: "short" });
+                        const isSelected = form.name === ev.title.replace(/^Sortie:\s*/i, "").trim();
+                        return (
+                          <div
+                            key={ev.id}
+                            onClick={() => {
+                              const cleanName = ev.title.replace(/^Sortie:\s*/i, "").trim();
+                              setForm({ ...form, name: cleanName });
+                            }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8,
+                              background: isSelected ? "#f0e6ff" : "transparent",
+                              border: isSelected ? `1.5px solid ${P.a1}` : "1.5px solid transparent",
+                              cursor: "pointer", transition: "all 0.15s"
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f0e6ff"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <span style={{ fontSize: 9, fontWeight: 600, color: P.a1, background: "#f0e6ff", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ev.title.replace(/^Sortie:\s*/i, "")}
+                            </span>
+                            {isSelected && <span style={{ fontSize: 10, color: P.a1 }}>✓</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Input label="Nom" type="text" placeholder="Ex: Elite Trainer Box..." value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input label="Où acheté" type="text" placeholder="Amazon, eBay..." value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
           <Input label="Date d'achat" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
@@ -410,6 +450,7 @@ function CalendarTab({ events, setEvents }) {
   const [view, setView] = useState("list"); // "list" | "grid"
   const [gridMonth, setGridMonth] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [dayPopover, setDayPopover] = useState(null); // date string "YYYY-MM-DD" or null
+  const [selectedDate, setSelectedDate] = useState(null); // date string "YYYY-MM-DD" for visual selection
   const todayStr = today();
 
   const save = (ev) => {
@@ -532,30 +573,64 @@ function CalendarTab({ events, setEvents }) {
         </div>
 
         {/* Day grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
           {cells.map((cell, i) => {
             if (!cell) return <div key={`e-${i}`} />;
             const { d, dateStr, evs } = cell;
             const isToday = dateStr === todayStr;
+            const isSelected = dateStr === selectedDate;
             const hasEvents = evs.length > 0;
             return (
               <div key={dateStr}
-                onClick={() => hasEvents && setDayPopover(dateStr)}
-                style={{
-                  aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  borderRadius: 10, background: isToday ? P.a1 : "transparent", cursor: hasEvents ? "pointer" : "default",
-                  position: "relative", transition: "background 0.15s",
+                onClick={() => {
+                  setSelectedDate(dateStr);
+                  if (hasEvents) setDayPopover(dateStr);
+                  else setDayPopover(null);
                 }}
-                onMouseEnter={(e) => { if (hasEvents && !isToday) e.currentTarget.style.background = "#ede9f5"; }}
-                onMouseLeave={(e) => { if (!isToday) e.currentTarget.style.background = "transparent"; }}
+                style={{
+                  minHeight: 70, display: "flex", flexDirection: "column", alignItems: "stretch",
+                  borderRadius: 10,
+                  background: isSelected ? "#ede9f5" : "transparent",
+                  border: isSelected ? `2px solid ${P.a1}` : "2px solid transparent",
+                  cursor: "pointer",
+                  position: "relative", transition: "all 0.15s",
+                  padding: 4,
+                }}
+                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f5f0fa"; }}
+                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
-                <div style={{ fontSize: 13, fontWeight: isToday ? 700 : 500, color: isToday ? "#fff" : P.text }}>{d}</div>
-                {/* Event dots */}
+                <div style={{
+                  fontSize: 12, fontWeight: isToday ? 700 : 500,
+                  color: isToday ? "#fff" : P.text,
+                  background: isToday ? P.a1 : "transparent",
+                  borderRadius: 6,
+                  width: 22, height: 22,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 2
+                }}>{d}</div>
+                {/* Event labels */}
                 {hasEvents && (
-                  <div style={{ display: "flex", gap: 2, marginTop: 3 }}>
-                    {evs.slice(0, 3).map((ev, idx) => (
-                      <div key={idx} style={{ width: 5, height: 5, borderRadius: "50%", background: EVENT_TYPES[ev.type]?.color || P.a1 }} />
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", flex: 1 }}>
+                    {evs.slice(0, 2).map((ev, idx) => {
+                      const t = EVENT_TYPES[ev.type];
+                      return (
+                        <div key={idx} style={{
+                          fontSize: 8, fontWeight: 600,
+                          background: t?.bg || "#f0e6ff",
+                          color: t?.color || P.a1,
+                          padding: "2px 4px",
+                          borderRadius: 4,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}>
+                          {ev.title.length > 12 ? ev.title.slice(0, 10) + "…" : ev.title}
+                        </div>
+                      );
+                    })}
+                    {evs.length > 2 && (
+                      <div style={{ fontSize: 8, color: P.soft, fontWeight: 500 }}>+{evs.length - 2}</div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1003,7 +1078,7 @@ export default function App() {
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 20px 100px" }}>
-        {tab === "wallet" && <WalletTab items={items} setItems={setItems} />}
+        {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
         {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
         {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
         {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
