@@ -4,9 +4,11 @@ import { useState, useEffect, useMemo } from "react";
 // PALETTE & SHARED UTILS
 // ═══════════════════════════════════════════════════════════
 const P = {
-  bg: "#f5f0fa", card: "#fff", shadow: "0 2px 24px rgba(100,80,140,0.08)",
-  a1: "#a78bca", a2: "#f9a8d4", a3: "#7dd3fc", a4: "#86efac",
-  text: "#3d3350", soft: "#7a6d8a",
+  bg: "#f8fafc", card: "#fff", shadow: "0 2px 16px rgba(15,23,42,0.06)",
+  a1: "#475569", a2: "#b45309", a3: "#047857", a4: "#16a34a",
+  text: "#1e293b", soft: "#64748b",
+  accent: "#1e40af", // bleu pro pour highlights
+  danger: "#dc2626",
 };
 
 const fmt = (n) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
@@ -27,7 +29,7 @@ const INIT = {
 // SHARED COMPONENTS
 // ═══════════════════════════════════════════════════════════
 function Blob({ style }) {
-  return <div style={{ position: "absolute", borderRadius: "50%", filter: "blur(80px)", opacity: 0.35, pointerEvents: "none", ...style }} />;
+  return <div style={{ position: "absolute", borderRadius: "50%", filter: "blur(100px)", opacity: 0.15, pointerEvents: "none", ...style }} />;
 }
 
 function Input({ label, type, placeholder, value, onChange, style: extraStyle }) {
@@ -35,8 +37,8 @@ function Input({ label, type, placeholder, value, onChange, style: extraStyle })
     <div style={{ marginBottom: 10, ...extraStyle }}>
       <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={onChange}
-        style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e5dff0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#faf8fd", color: P.text }}
-        onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e5dff0")}
+        style={{ display: "block", width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text }}
+        onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
       />
     </div>
   );
@@ -45,9 +47,9 @@ function Input({ label, type, placeholder, value, onChange, style: extraStyle })
 function AddButton({ onClick }) {
   return (
     <button onClick={onClick}
-      style={{ width: "100%", padding: "14px", border: "2px dashed #d1c4e9", borderRadius: 20, background: "transparent", color: P.soft, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s, color 0.2s" }}
+      style={{ width: "100%", padding: "14px", border: "1px dashed #cbd5e1", borderRadius: 10, background: "transparent", color: P.soft, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s, color 0.2s" }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.a1; e.currentTarget.style.color = P.a1; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#d1c4e9"; e.currentTarget.style.color = P.soft; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.color = P.soft; }}
     >+ Ajouter</button>
   );
 }
@@ -55,8 +57,8 @@ function AddButton({ onClick }) {
 function Card({ children, onClick, style: extra }) {
   return (
     <div onClick={onClick}
-      style={{ background: P.card, borderRadius: 20, padding: "14px 16px", boxShadow: P.shadow, cursor: onClick ? "pointer" : "default", transition: "transform 0.2s, box-shadow 0.2s", ...extra }}
-      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 28px rgba(100,80,140,0.14)"; }}}
+      style={{ background: P.card, borderRadius: 12, padding: "14px 16px", boxShadow: P.shadow, border: "1px solid #e2e8f0", cursor: onClick ? "pointer" : "default", transition: "transform 0.2s, box-shadow 0.2s", ...extra }}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(15,23,42,0.1)"; }}}
       onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = P.shadow; }}}
     >{children}</div>
   );
@@ -64,9 +66,9 @@ function Card({ children, onClick, style: extra }) {
 
 function BottomModal({ onClose, children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(61,51,80,0.4)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", padding: "20px 20px 40px" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5dff0", margin: "0 auto 18px" }} />
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", padding: "20px 20px 40px" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0", margin: "0 auto 18px" }} />
         {children}
       </div>
     </div>
@@ -77,7 +79,7 @@ function BottomModal({ onClose, children }) {
 function Stars({ rating, max = 5 }) {
   return (
     <span style={{ fontSize: 13, letterSpacing: 1 }}>
-      {"★".repeat(rating)}<span style={{ color: "#e5dff0" }}>{"★".repeat(max - rating)}</span>
+      {"★".repeat(rating)}<span style={{ color: "#e2e8f0" }}>{"★".repeat(max - rating)}</span>
     </span>
   );
 }
@@ -91,16 +93,21 @@ const avgPrice = (item) => { const q = totalQty(item); return q > 0 ? totalCost(
 const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((item.currentPrice - avg) / avg) * 100).toFixed(1) : "0.0"; };
 
 function TypeBadge({ type }) {
-  const map = { "Ultra Premium Collection": { bg: "#f0e6ff", text: "#7c5cbf" }, "Bundle": { bg: "#e6f4ff", text: "#4a8fc9" }, "Elite Trainer Box": { bg: "#fff0e6", text: "#c97a4a" }, "Collection Box": { bg: "#e6fff0", text: "#4ac97a" } };
-  const c = map[type] || { bg: "#f0f0f0", text: "#666" };
-  return <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", background: c.bg, color: c.text, padding: "2px 8px", borderRadius: 20, display: "inline-block" }}>{type}</span>;
+  const map = {
+    "Ultra Premium Collection": { bg: "#fef3c7", text: "#92400e" },
+    "Bundle": { bg: "#e0f2fe", text: "#0369a1" },
+    "Elite Trainer Box": { bg: "#fee2e2", text: "#991b1b" },
+    "Collection Box": { bg: "#d1fae5", text: "#065f46" }
+  };
+  const c = map[type] || { bg: "#f1f5f9", text: "#475569" };
+  return <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", background: c.bg, color: c.text, padding: "3px 8px", borderRadius: 4, display: "inline-block" }}>{type}</span>;
 }
 
 function MiniBar({ value, max, color }) {
   const w = Math.max((value / max) * 100, 6);
   return (
-    <div style={{ width: "100%", height: 5, borderRadius: 3, background: "#e8e0f0", overflow: "hidden" }}>
-      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
+    <div style={{ width: "100%", height: 4, borderRadius: 2, background: "#e2e8f0", overflow: "hidden" }}>
+      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
     </div>
   );
 }
@@ -108,7 +115,7 @@ function MiniBar({ value, max, color }) {
 function DonutChart({ items }) {
   const total = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
   if (total === 0) return null;
-  const colors = ["#a78bca", "#7dd3fc", "#f9a8d4", "#86efac", "#fbbf24", "#fb923c", "#c084fc", "#34d399"];
+  const colors = ["#475569", "#0369a1", "#047857", "#b45309", "#7c3aed", "#be185d", "#0891b2", "#4f46e5"];
   let cumul = 0;
   const segments = items.map((item, idx) => { const val = (item.currentPrice * totalQty(item)) / total; const start = cumul; cumul += val; return { item, val, start, color: colors[idx % colors.length] }; });
   const size = 110, cx = size / 2, cy = size / 2, r = 42;
@@ -116,13 +123,13 @@ function DonutChart({ items }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-        {segments.map((seg, i) => <path key={i} d={arc(seg.start, seg.start + seg.val)} fill={seg.color} stroke="#fff" strokeWidth="2.5" />)}
+        {segments.map((seg, i) => <path key={i} d={arc(seg.start, seg.start + seg.val)} fill={seg.color} stroke="#fff" strokeWidth="2" />)}
         <circle cx={cx} cy={cy} r={20} fill="#fff" />
         <text x={cx} y={cy - 2} textAnchor="middle" fontSize="11" fontWeight="700" fill={P.text}>{items.length}</text>
         <text x={cx} y={cy + 7} textAnchor="middle" fontSize="6.5" fill={P.soft}>items</text>
       </svg>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-        {items.map((item, idx) => <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 10, height: 10, borderRadius: 3, background: colors[idx % colors.length], flexShrink: 0 }} /><span style={{ fontSize: 11, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span><span style={{ fontSize: 11, fontWeight: 600, color: P.soft }}>{((item.currentPrice * totalQty(item)) / total * 100).toFixed(1)}%</span></div>)}
+        {items.map((item, idx) => <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: colors[idx % colors.length], flexShrink: 0 }} /><span style={{ fontSize: 11, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span><span style={{ fontSize: 11, fontWeight: 600, color: P.soft }}>{((item.currentPrice * totalQty(item)) / total * 100).toFixed(1)}%</span></div>)}
       </div>
     </div>
   );
@@ -156,7 +163,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           { label: "Coût moy.", value: fmt(avgPrice(item)), sub: `${totalQty(item)} unité${totalQty(item) > 1 ? "s" : ""}` },
           { label: "PnL", value: `${isUp ? "+" : ""}${fmt(pnL)}`, sub: `${isUp ? "+" : ""}${itemPnLPct(item)}%`, hl: true, isUp },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#faf8fd", borderRadius: 14, padding: 10 }}>
+          <div key={i} style={{ background: "#f8fafc", borderRadius: 8, padding: 10 }}>
             <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: s.hl ? (s.isUp ? "#16a34a" : "#dc2626") : P.text }}>{s.value}</div>
             <div style={{ fontSize: 9, color: P.soft, marginTop: 2 }}>{s.sub}</div>
@@ -165,7 +172,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       </div>
 
       {/* Prix editable */}
-      <div style={{ background: "#faf8fd", borderRadius: 14, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 2 }}>Prix actuel</div>
           {!editingPrice ? <div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div> : (
@@ -178,7 +185,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
             </div>
           )}
         </div>
-        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 10, fontWeight: 600, color: P.a1, background: "#f0e6ff", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
+        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 10, fontWeight: 600, color: P.a1, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
       </div>
 
       {/* Historique */}
@@ -188,7 +195,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           {[...item.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tx) => {
             if (editingTxId === tx.id) {
               return (
-                <div key={tx.id} style={{ background: "#f0e6ff", borderRadius: 12, padding: "10px 12px" }}>
+                <div key={tx.id} style={{ background: "#f1f5f9", borderRadius: 12, padding: "10px 12px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
                     {[{ key: "source", label: "Où acheté", type: "text" }, { key: "date", label: "Date", type: "date" }, { key: "price", label: "Prix (€)", type: "number" }, { key: "quantity", label: "Quantité", type: "number" }].map((f) => (
                       <div key={f.key}>
@@ -208,8 +215,8 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
             }
             return (
               <div key={tx.id} onClick={() => { setEditingTxId(tx.id); setEditTx({ source: tx.source, date: tx.date, price: String(tx.price), quantity: String(tx.quantity) }); }}
-                style={{ display: "flex", alignItems: "center", gap: 10, background: "#faf8fd", borderRadius: 12, padding: "8px 12px", cursor: "pointer" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f0e6ff")} onMouseLeave={(e) => (e.currentTarget.style.background = "#faf8fd")}>
+                style={{ display: "flex", alignItems: "center", gap: 10, background: "#f8fafc", borderRadius: 12, padding: "8px 12px", cursor: "pointer" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600, color: P.text }}>{tx.source}</div><div style={{ fontSize: 10, color: P.soft }}>{fmtDate(tx.date)} · Qté : {tx.quantity}</div></div>
                 <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 700, color: P.text }}>{fmt(tx.price)}</div><div style={{ fontSize: 9, color: P.soft }}>/ unité</div></div>
                 <div style={{ fontSize: 12, color: P.soft }}>›</div>
@@ -220,7 +227,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       </div>
 
       {/* Nouvelle transaction */}
-      <div style={{ background: "#f5f0fa", borderRadius: 14, padding: 14 }}>
+      <div style={{ background: "#f8fafc", borderRadius: 8, padding: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: P.text, marginBottom: 10 }}>+ Nouvelle transaction</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <Input label="Où acheté" type="text" placeholder="Amazon..." value={newTx.source} onChange={(e) => setNewTx({ ...newTx, source: e.target.value })} />
@@ -228,7 +235,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           <Input label="Prix (€)" type="number" placeholder="180" value={newTx.price} onChange={(e) => setNewTx({ ...newTx, price: e.target.value })} />
           <Input label="Quantité" type="number" placeholder="1" value={newTx.quantity} onChange={(e) => setNewTx({ ...newTx, quantity: e.target.value })} />
         </div>
-        <button onClick={addTx} style={{ width: "100%", padding: 8, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #a78bca, #c4b5fd)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>Ajouter achat</button>
+        <button onClick={addTx} style={{ width: "100%", padding: 8, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>Ajouter achat</button>
       </div>
     </BottomModal>
   );
@@ -272,26 +279,26 @@ function WalletTab({ items, setItems, events }) {
   return (
     <div>
       {/* Overview card */}
-      <div style={{ background: "linear-gradient(135deg, #c4b5fd 0%, #a78bca 40%, #f9a8d4 100%)", borderRadius: 24, padding: "22px 22px 18px", color: "#fff", marginBottom: 16, boxShadow: "0 4px 32px rgba(167,139,202,0.35)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 60%)", pointerEvents: "none" }} />
+      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 8, padding: "22px 22px 18px", color: "#fff", marginBottom: 16, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1.2, opacity: 0.8, marginBottom: 2 }}>VALEUR TOTALE</div>
-          <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
-          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
-            <span style={{ background: totalPnL >= 0 ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)", padding: "3px 10px", borderRadius: 20 }}>{totalPnL >= 0 ? "+" : ""}{fmt(totalPnL)} ({totalPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-            <span style={{ opacity: 0.6, fontSize: 10 }}>{fmt(totalBuy)} investis</span>
+          <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 2 }}>VALEUR TOTALE</div>
+          <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
+            <span style={{ background: totalPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "4px 10px", borderRadius: 6 }}>{totalPnL >= 0 ? "+" : ""}{fmt(totalPnL)} ({totalPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
+            <span style={{ opacity: 0.5, fontSize: 11 }}>{fmt(totalBuy)} investis</span>
           </div>
         </div>
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
         {[
-          { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.a1 },
-          { label: "En bénéfice", value: items.filter((i) => i.currentPrice >= avgPrice(i)).length, color: "#16a34a" },
+          { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
+          { label: "En profit", value: items.filter((i) => i.currentPrice >= avgPrice(i)).length, color: "#16a34a" },
           { label: "En perte", value: items.filter((i) => i.currentPrice < avgPrice(i)).length, color: "#dc2626" },
         ].map((s) => (
-          <div key={s.label} style={{ background: P.card, borderRadius: 16, padding: "10px 8px", boxShadow: P.shadow, textAlign: "center" }}>
+          <div key={s.label} style={{ background: P.card, borderRadius: 10, padding: "12px 8px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 2 }}>{s.label}</div>
           </div>
@@ -339,7 +346,7 @@ function WalletTab({ items, setItems, events }) {
           {Object.keys(releasesByYear).length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, display: "block", marginBottom: 8 }}>Sorties récentes (cliquer pour sélectionner)</label>
-              <div style={{ maxHeight: 180, overflowY: "auto", background: "#faf8fd", borderRadius: 12, padding: 10 }}>
+              <div style={{ maxHeight: 180, overflowY: "auto", background: "#f8fafc", borderRadius: 12, padding: 10 }}>
                 {Object.entries(releasesByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearEvents]) => (
                   <div key={year} style={{ marginBottom: 10 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: P.a1, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
@@ -360,14 +367,14 @@ function WalletTab({ items, setItems, events }) {
                             }}
                             style={{
                               display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8,
-                              background: isSelected ? "#f0e6ff" : "transparent",
+                              background: isSelected ? "#f1f5f9" : "transparent",
                               border: isSelected ? `1.5px solid ${P.a1}` : "1.5px solid transparent",
                               cursor: "pointer", transition: "all 0.15s"
                             }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f0e6ff"; }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f1f5f9"; }}
                             onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                           >
-                            <span style={{ fontSize: 9, fontWeight: 600, color: P.a1, background: "#f0e6ff", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: P.a1, background: "#f1f5f9", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
                             <span style={{ fontSize: 11, fontWeight: 500, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {ev.title.replace(/^Sortie:\s*/i, "")}
                             </span>
@@ -390,13 +397,13 @@ function WalletTab({ items, setItems, events }) {
           <Input label="Prix actuel (€)" type="number" placeholder="180" value={form.currentPrice} onChange={(e) => setForm({ ...form, currentPrice: e.target.value })} />
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
-            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e5dff0", fontSize: 13, fontFamily: "inherit", background: "#faf8fd", color: P.text, outline: "none", boxSizing: "border-box" }}>
+            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", background: "#f8fafc", color: P.text, outline: "none", boxSizing: "border-box" }}>
               <option value="Ultra Premium Collection">Ultra Premium Collection</option><option value="Bundle">Bundle</option><option value="Elite Trainer Box">Elite Trainer Box</option><option value="Collection Box">Collection Box</option>
             </select>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={addItem} style={{ flex: 1, padding: 10, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #a78bca, #c4b5fd)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Ajouter</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 16px", borderRadius: 14, border: "1.5px solid #e5dff0", background: "transparent", color: P.soft, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
+            <button onClick={addItem} style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Ajouter</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: "10px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "transparent", color: P.soft, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
           </div>
         </Card>
       )}
@@ -410,9 +417,9 @@ function WalletTab({ items, setItems, events }) {
 // TAB: CALENDAR
 // ═══════════════════════════════════════════════════════════
 const EVENT_TYPES = {
-  release: { label: "Sortie", color: "#a78bca", bg: "#f0e6ff", icon: "📦" },
-  brocante: { label: "Brocante", color: "#f9a8d4", bg: "#fff0f5", icon: "🛒" },
-  event: { label: "Événement", color: "#7dd3fc", bg: "#f0f8ff", icon: "🎪" },
+  release: { label: "Sortie", color: "#0369a1", bg: "#e0f2fe", icon: "📦" },
+  brocante: { label: "Brocante", color: "#b45309", bg: "#fef3c7", icon: "🛒" },
+  event: { label: "Événement", color: "#047857", bg: "#d1fae5", icon: "🎪" },
 };
 
 function EventFormModal({ onClose, onAdd, editItem }) {
@@ -432,14 +439,14 @@ function EventFormModal({ onClose, onAdd, editItem }) {
         <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
           {Object.entries(EVENT_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e5dff0", background: form.type === k ? v.bg : "#faf8fd", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
         </div>
       </div>
       <Input label="Note (optionnel)" type="text" placeholder="Détails..." value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #a78bca, #c4b5fd)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -492,16 +499,16 @@ function CalendarTab({ events, setEvents }) {
               return (
                 <Card key={ev.id} style={{ opacity: isPast ? 0.5 : 1 }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                    <div style={{ background: isPast ? "#eee" : t.bg, borderRadius: 14, padding: "8px 10px", textAlign: "center", flexShrink: 0, minWidth: 48 }}>
+                    <div style={{ background: isPast ? "#eee" : t.bg, borderRadius: 8, padding: "8px 10px", textAlign: "center", flexShrink: 0, minWidth: 48 }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: isPast ? "#999" : t.color, lineHeight: 1.1 }}>{new Date(ev.date + "T12:00:00").getDate()}</div>
                       <div style={{ fontSize: 8.5, color: isPast ? "#999" : t.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{new Date(ev.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short" })}</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 20 }}>{t.icon} {t.label}</span>
-                        {isToday && <span style={{ fontSize: 9, fontWeight: 600, color: "#16a34a", background: "#f0fff4", padding: "1.5px 6px", borderRadius: 20 }}>Aujourd'hui</span>}
-                        {!isPast && !isToday && days <= 7 && <span style={{ fontSize: 9, fontWeight: 600, color: "#dc2626", background: "#fff0f0", padding: "1.5px 6px", borderRadius: 20 }}>Dans {days}j</span>}
-                        {isPast && <span style={{ fontSize: 9, color: "#999", background: "#f0f0f0", padding: "1.5px 6px", borderRadius: 20 }}>Il y a {Math.abs(days)}j</span>}
+                        <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
+                        {isToday && <span style={{ fontSize: 9, fontWeight: 600, color: "#16a34a", background: "#f0fff4", padding: "1.5px 6px", borderRadius: 6 }}>Aujourd'hui</span>}
+                        {!isPast && !isToday && days <= 7 && <span style={{ fontSize: 9, fontWeight: 600, color: "#dc2626", background: "#fff0f0", padding: "1.5px 6px", borderRadius: 6 }}>Dans {days}j</span>}
+                        {isPast && <span style={{ fontSize: 9, color: "#999", background: "#f0f0f0", padding: "1.5px 6px", borderRadius: 6 }}>Il y a {Math.abs(days)}j</span>}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: P.text }}>{ev.title}</div>
                       {ev.note && <div style={{ fontSize: 10, color: P.soft, marginTop: 3 }}>{ev.note}</div>}
@@ -590,13 +597,13 @@ function CalendarTab({ events, setEvents }) {
                 style={{
                   minHeight: 70, display: "flex", flexDirection: "column", alignItems: "stretch",
                   borderRadius: 10,
-                  background: isSelected ? "#ede9f5" : "transparent",
+                  background: isSelected ? "#f1f5f9" : "transparent",
                   border: isSelected ? `2px solid ${P.a1}` : "2px solid transparent",
                   cursor: "pointer",
                   position: "relative", transition: "all 0.15s",
                   padding: 4,
                 }}
-                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f5f0fa"; }}
+                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f8fafc"; }}
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
                 <div style={{
@@ -616,7 +623,7 @@ function CalendarTab({ events, setEvents }) {
                       return (
                         <div key={idx} style={{
                           fontSize: 8, fontWeight: 600,
-                          background: t?.bg || "#f0e6ff",
+                          background: t?.bg || "#f1f5f9",
                           color: t?.color || P.a1,
                           padding: "2px 4px",
                           borderRadius: 4,
@@ -651,7 +658,7 @@ function CalendarTab({ events, setEvents }) {
               {popoverEvents.map((ev) => {
                 const t = EVENT_TYPES[ev.type];
                 return (
-                  <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#faf8fd", borderRadius: 12, padding: "8px 10px" }}>
+                  <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", borderRadius: 12, padding: "8px 10px" }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ev.title}</div>
@@ -675,7 +682,7 @@ function CalendarTab({ events, setEvents }) {
   return (
     <div>
       {/* View toggle */}
-      <div style={{ display: "flex", gap: 4, background: "#ede9f5", borderRadius: 12, padding: 3, marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 12, padding: 3, marginBottom: 18 }}>
         {[{ id: "list", label: "Liste", icon: "☰" }, { id: "grid", label: "Calendrier", icon: "⊞" }].map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
             style={{ flex: 1, padding: "7px 4px", borderRadius: 10, border: "none", background: view === v.id ? "#fff" : "transparent", color: view === v.id ? P.text : P.soft, fontSize: 11, fontWeight: view === v.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", boxShadow: view === v.id ? "0 1px 6px rgba(100,80,140,0.12)" : "none" }}>
@@ -698,9 +705,9 @@ function CalendarTab({ events, setEvents }) {
 // TAB: SPOTS
 // ═══════════════════════════════════════════════════════════
 const SPOT_TYPES = {
-  magasin: { label: "Magasin", color: "#a78bca", bg: "#f0e6ff", icon: "🏪" },
-  online: { label: "En ligne", color: "#7dd3fc", bg: "#f0f8ff", icon: "🌐" },
-  brocante: { label: "Brocante", color: "#f9a8d4", bg: "#fff0f5", icon: "🛒" },
+  magasin: { label: "Magasin", color: "#475569", bg: "#f1f5f9", icon: "🏪" },
+  online: { label: "En ligne", color: "#0369a1", bg: "#e0f2fe", icon: "🌐" },
+  brocante: { label: "Brocante", color: "#b45309", bg: "#fef3c7", icon: "🛒" },
 };
 
 function SpotFormModal({ onClose, onAdd, editItem }) {
@@ -719,7 +726,7 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
         <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
           {Object.entries(SPOT_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e5dff0", background: form.type === k ? v.bg : "#faf8fd", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
@@ -730,17 +737,17 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
         <div style={{ display: "flex", gap: 4, marginTop: 5 }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button key={n} onClick={() => setForm({ ...form, rating: n })}
-              style={{ fontSize: 22, background: "none", border: "none", cursor: "pointer", color: n <= form.rating ? "#f59e0b" : "#e5dff0", padding: "0 2px" }}>★</button>
+              style={{ fontSize: 22, background: "none", border: "none", cursor: "pointer", color: n <= form.rating ? "#f59e0b" : "#e2e8f0", padding: "0 2px" }}>★</button>
           ))}
         </div>
       </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Commentaire</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions..." rows={3}
-          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e5dff0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#faf8fd", color: P.text, resize: "none" }}
-          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e5dff0")} />
+          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none" }}
+          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #a78bca, #c4b5fd)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -777,20 +784,20 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 20 }}>{t.icon} {t.label}</span>
+            <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
           </div>
           <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{spot.name}</div>
           <div style={{ marginTop: 3 }}><Stars rating={spot.rating} /></div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={onEdit} style={{ background: "#f0e6ff", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 10, fontWeight: 600, color: P.a1, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
+          <button onClick={onEdit} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 10, fontWeight: 600, color: P.a1, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
         </div>
       </div>
 
       {/* Note */}
       {spot.note && (
-        <div style={{ background: "#faf8fd", borderRadius: 14, padding: "10px 12px", marginBottom: 16 }}>
+        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 12px", marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: P.soft, lineHeight: 1.5 }}>{spot.note}</div>
         </div>
       )}
@@ -801,7 +808,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
       </div>
 
       {purchases.length === 0 ? (
-        <div style={{ background: "#faf8fd", borderRadius: 14, padding: "18px 16px", textAlign: "center" }}>
+        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
           <div style={{ fontSize: 28, marginBottom: 6 }}>🛒</div>
           <div style={{ fontSize: 12, color: P.soft }}>Aucun achat enregistré ici.</div>
           <div style={{ fontSize: 10, color: P.soft, marginTop: 3, opacity: 0.7 }}>Les achats apparaissent automatiquement quand la source dans le Wallet correspond à ce spot.</div>
@@ -810,11 +817,11 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
         <>
           {/* Summary row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <div style={{ background: "#faf8fd", borderRadius: 12, padding: "10px 12px" }}>
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
               <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 3 }}>Total dépensé</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: P.a1 }}>{fmt(totalSpent)}</div>
             </div>
-            <div style={{ background: "#faf8fd", borderRadius: 12, padding: "10px 12px" }}>
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
               <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 3 }}>Achats</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{purchases.length}</div>
             </div>
@@ -823,7 +830,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
           {/* Transaction list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {purchases.map((p, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#faf8fd", borderRadius: 12, padding: "9px 12px" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#f8fafc", borderRadius: 12, padding: "9px 12px" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.itemName}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
@@ -876,8 +883,8 @@ function SpotsTab({ spots, setSpots, items }) {
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 20 }}>{t.icon} {t.label}</span>
-                    {count > 0 && <span style={{ fontSize: 9, fontWeight: 600, background: "#f0e6ff", color: P.a1, padding: "1.5px 6px", borderRadius: 20 }}>{count} achat{count > 1 ? "s" : ""}</span>}
+                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
+                    {count > 0 && <span style={{ fontSize: 9, fontWeight: 600, background: "#f1f5f9", color: P.a1, padding: "1.5px 6px", borderRadius: 6 }}>{count} achat{count > 1 ? "s" : ""}</span>}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: P.text }}>{sp.name}</div>
                   <div style={{ marginTop: 3 }}><Stars rating={sp.rating} /></div>
@@ -908,10 +915,10 @@ function SpotsTab({ spots, setSpots, items }) {
 // TAB: RESOURCES
 // ═══════════════════════════════════════════════════════════
 const RESOURCE_TYPES = {
-  video:   { label: "Vidéo",   color: "#dc2626", bg: "#fff5f5", icon: "▶️" },
-  article: { label: "Article", color: "#7a6d8a", bg: "#f5f0fa", icon: "📄" },
-  tweet:   { label: "Tweet",   color: "#0ea5e9", bg: "#f0f9ff", icon: "🐦" },
-  other:   { label: "Autre",   color: "#a78bca", bg: "#f0e6ff", icon: "🔗" },
+  video:   { label: "Vidéo",   color: "#dc2626", bg: "#fee2e2", icon: "▶️" },
+  article: { label: "Article", color: "#475569", bg: "#f1f5f9", icon: "📄" },
+  tweet:   { label: "Tweet",   color: "#0369a1", bg: "#e0f2fe", icon: "🐦" },
+  other:   { label: "Autre",   color: "#6b7280", bg: "#f3f4f6", icon: "🔗" },
 };
 
 function ResourceFormModal({ onClose, onAdd, editItem }) {
@@ -931,7 +938,7 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
         <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
           {Object.entries(RESOURCE_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: "1 1 calc(50% - 3px)", padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e5dff0", background: form.type === k ? v.bg : "#faf8fd", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: "1 1 calc(50% - 3px)", padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
@@ -940,10 +947,10 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
       <div style={{ marginBottom: 10 }}>
         <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note (optionnel)</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions, points clés..." rows={3}
-          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e5dff0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#faf8fd", color: P.text, resize: "none" }}
-          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e5dff0")} />
+          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none" }}
+          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #a78bca, #c4b5fd)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -973,12 +980,12 @@ function ResourcesTab({ resources, setResources }) {
       {/* Filter pills */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
         <button onClick={() => setFilter("all")}
-          style={{ padding: "5px 12px", borderRadius: 20, border: "none", background: filter === "all" ? P.a1 : "#ede9f5", color: filter === "all" ? "#fff" : P.soft, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: filter === "all" ? P.a1 : "#f1f5f9", color: filter === "all" ? "#fff" : P.soft, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
           Tous {resources.length > 0 && `(${resources.length})`}
         </button>
         {Object.entries(RESOURCE_TYPES).map(([k, v]) => counts[k] ? (
           <button key={k} onClick={() => setFilter(k)}
-            style={{ padding: "5px 12px", borderRadius: 20, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+            style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
             {v.icon} {v.label} ({counts[k]})
           </button>
         ) : null)}
@@ -993,7 +1000,7 @@ function ResourcesTab({ resources, setResources }) {
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 20 }}>{t.icon} {t.label}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: P.text, lineHeight: 1.3 }}>{r.title}</div>
                   <div style={{ fontSize: 10, color: P.a1, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.url}</div>
@@ -1010,7 +1017,7 @@ function ResourcesTab({ resources, setResources }) {
           );
         })}
         {filtered.length === 0 && (
-          <div style={{ background: "#faf8fd", borderRadius: 18, padding: "28px 20px", textAlign: "center" }}>
+          <div style={{ background: "#f8fafc", borderRadius: 18, padding: "28px 20px", textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📚</div>
             <div style={{ fontSize: 13, color: P.soft, fontWeight: 500 }}>{filter === "all" ? "Aucune ressource" : `Aucune ressource de type "${RESOURCE_TYPES[filter]?.label}"`}</div>
             <div style={{ fontSize: 10.5, color: P.soft, marginTop: 4, opacity: 0.7 }}>Ajoute des liens utiles ci-dessous</div>
@@ -1064,16 +1071,15 @@ export default function App() {
   useEffect(() => { if (!loaded) return; try { localStorage.setItem("hexuo-resources", JSON.stringify(resources)); } catch (e) {} }, [resources, loaded]);
 
   return (
-    <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Sora', sans-serif", color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-      <Blob style={{ top: -60, right: -60, width: 280, height: 280, background: P.a1 }} />
-      <Blob style={{ bottom: 80, left: -80, width: 240, height: 240, background: P.a2 }} />
-      <Blob style={{ top: "40%", right: -40, width: 160, height: 160, background: P.a3 }} />
+      <Blob style={{ top: -80, right: -80, width: 300, height: 300, background: "#94a3b8" }} />
+      <Blob style={{ bottom: 100, left: -100, width: 260, height: 260, background: "#cbd5e1" }} />
 
       {/* Logo — top right, discreet */}
       <div style={{ position: "relative", zIndex: 1, padding: "20px 22px 12px", flexShrink: 0, textAlign: "right" }}>
-        <span style={{ fontSize: 17, fontWeight: 700, color: P.text, letterSpacing: "-0.3px" }}>Hexuo</span>
+        <span style={{ fontSize: 17, fontWeight: 700, color: P.text, letterSpacing: "-0.5px" }}>Hexuo</span>
       </div>
 
       {/* Scrollable content */}
@@ -1084,11 +1090,11 @@ export default function App() {
         {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
       </div>
 
-      {/* Bottom tab bar — fixed, frosted glass */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", gap: 4, padding: "10px 16px 28px", background: "rgba(245,240,250,0.85)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(167,139,202,0.12)" }}>
+      {/* Bottom tab bar */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", gap: 4, padding: "10px 16px 28px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0" }}>
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex: 1, padding: "6px 4px", borderRadius: 14, border: "none", background: tab === t.id ? P.a1 : "transparent", color: tab === t.id ? "#fff" : P.soft, fontSize: 9.5, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", background: tab === t.id ? "#1e293b" : "transparent", color: tab === t.id ? "#fff" : P.soft, fontSize: 9.5, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <span style={{ fontSize: 18 }}>{t.icon}</span>
             {t.label}
           </button>
