@@ -234,11 +234,22 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   );
 }
 
-function WalletTab({ items, setItems }) {
+function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
+
+  // Get releases sorted by date (most recent first), grouped by year
+  const releasesByYear = useMemo(() => {
+    const releases = events.filter((e) => e.type === "release").sort((a, b) => new Date(b.date) - new Date(a.date));
+    return releases.reduce((acc, ev) => {
+      const year = new Date(ev.date + "T12:00:00").getFullYear();
+      if (!acc[year]) acc[year] = [];
+      acc[year].push(ev);
+      return acc;
+    }, {});
+  }, [events]);
 
   const totalBuy = items.reduce((s, i) => s + totalCost(i), 0);
   const totalCur = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
@@ -323,6 +334,54 @@ function WalletTab({ items, setItems }) {
       {!showForm ? <AddButton onClick={() => setShowForm(true)} /> : (
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Nouvel item</div>
+
+          {/* Releases timeline */}
+          {Object.keys(releasesByYear).length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, display: "block", marginBottom: 8 }}>Sorties récentes (cliquer pour sélectionner)</label>
+              <div style={{ maxHeight: 180, overflowY: "auto", background: "#faf8fd", borderRadius: 12, padding: 10 }}>
+                {Object.entries(releasesByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearEvents]) => (
+                  <div key={year} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: P.a1, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: P.a1 }} />
+                      {year}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 14, borderLeft: `2px solid ${P.a1}20`, marginLeft: 3 }}>
+                      {yearEvents.map((ev) => {
+                        const d = new Date(ev.date + "T12:00:00");
+                        const monthLabel = d.toLocaleDateString("fr-FR", { month: "short" });
+                        const isSelected = form.name === ev.title.replace(/^Sortie:\s*/i, "").trim();
+                        return (
+                          <div
+                            key={ev.id}
+                            onClick={() => {
+                              const cleanName = ev.title.replace(/^Sortie:\s*/i, "").trim();
+                              setForm({ ...form, name: cleanName });
+                            }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8,
+                              background: isSelected ? "#f0e6ff" : "transparent",
+                              border: isSelected ? `1.5px solid ${P.a1}` : "1.5px solid transparent",
+                              cursor: "pointer", transition: "all 0.15s"
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f0e6ff"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <span style={{ fontSize: 9, fontWeight: 600, color: P.a1, background: "#f0e6ff", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ev.title.replace(/^Sortie:\s*/i, "")}
+                            </span>
+                            {isSelected && <span style={{ fontSize: 10, color: P.a1 }}>✓</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Input label="Nom" type="text" placeholder="Ex: Elite Trainer Box..." value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input label="Où acheté" type="text" placeholder="Amazon, eBay..." value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
           <Input label="Date d'achat" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
@@ -1019,7 +1078,7 @@ export default function App() {
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 20px 100px" }}>
-        {tab === "wallet" && <WalletTab items={items} setItems={setItems} />}
+        {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
         {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
         {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
         {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
