@@ -135,19 +135,58 @@ function DonutChart({ items }) {
   );
 }
 
+// Fee rates for platforms
+const PLATFORM_FEES = {
+  ebay: { label: "eBay", rate: 0.13 },
+  cardmarket: { label: "Cardmarket", rate: 0.05 },
+  vinted: { label: "Vinted", rate: 0.05 },
+  leboncoin: { label: "Leboncoin", rate: 0 },
+  direct: { label: "Vente directe", rate: 0 },
+};
+
 function ItemDetailModal({ item, onClose, onUpdate }) {
   const [newTx, setNewTx] = useState({ date: today(), price: "", quantity: "1", source: "" });
   const [editingPrice, setEditingPrice] = useState(false);
   const [editPrice, setEditPrice] = useState(String(item.currentPrice));
   const [editingTxId, setEditingTxId] = useState(null);
   const [editTx, setEditTx] = useState({ source: "", date: "", price: "", quantity: "" });
-  const pnL = (item.currentPrice - avgPrice(item)) * totalQty(item);
-  const isUp = pnL >= 0;
+  const [showSellForm, setShowSellForm] = useState(false);
+  const [sellForm, setSellForm] = useState({ date: today(), price: "", platform: "ebay", quantity: String(totalQty(item)) });
+
+  const isSold = item.sold && item.sold.length > 0;
+  const soldQty = isSold ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
+  const remainingQty = totalQty(item) - soldQty;
+
+  // Calculate P&L - if sold, use actual sale data; otherwise use current price estimate
+  const totalSaleRevenue = isSold ? item.sold.reduce((s, sale) => s + sale.netAmount, 0) : 0;
+  const soldCost = isSold ? (avgPrice(item) * soldQty) : 0;
+  const realizedPnL = totalSaleRevenue - soldCost;
+  const unrealizedPnL = remainingQty > 0 ? (item.currentPrice - avgPrice(item)) * remainingQty : 0;
+  const totalPnL = realizedPnL + unrealizedPnL;
+  const isUp = totalPnL >= 0;
 
   const savePrice = () => { const v = Number(editPrice); if (!isNaN(v) && v >= 0) onUpdate({ ...item, currentPrice: v }); setEditingPrice(false); };
   const addTx = () => { if (!newTx.source || Number(newTx.price) <= 0) return; onUpdate({ ...item, transactions: [...item.transactions, { id: Date.now(), date: newTx.date, price: Number(newTx.price), quantity: Number(newTx.quantity), source: newTx.source }] }); setNewTx({ date: today(), price: "", quantity: "1", source: "" }); };
   const deleteTx = (id) => { const rem = item.transactions.filter((t) => t.id !== id); onUpdate(rem.length === 0 ? null : { ...item, transactions: rem }); };
   const saveTx = (id) => { if (!editTx.source || Number(editTx.price) <= 0) return; onUpdate({ ...item, transactions: item.transactions.map((t) => t.id === id ? { ...t, source: editTx.source, date: editTx.date, price: Number(editTx.price), quantity: Number(editTx.quantity) } : t) }); setEditingTxId(null); };
+
+  const recordSale = () => {
+    const price = Number(sellForm.price);
+    const qty = Number(sellForm.quantity);
+    if (price <= 0 || qty <= 0 || qty > remainingQty) return;
+    const feeRate = PLATFORM_FEES[sellForm.platform]?.rate || 0;
+    const grossAmount = price * qty;
+    const fees = grossAmount * feeRate;
+    const netAmount = grossAmount - fees;
+    const sale = { id: Date.now(), date: sellForm.date, price, quantity: qty, platform: sellForm.platform, grossAmount, fees, netAmount };
+    onUpdate({ ...item, sold: [...(item.sold || []), sale] });
+    setShowSellForm(false);
+    setSellForm({ date: today(), price: "", platform: "ebay", quantity: String(Math.max(remainingQty - qty, 1)) });
+  };
+
+  const deleteSale = (id) => {
+    onUpdate({ ...item, sold: item.sold.filter((s) => s.id !== id) });
+  };
 
   return (
     <BottomModal onClose={onClose}>
@@ -157,11 +196,15 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isSold ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
         {[
-          { label: "Valeur", value: fmt(item.currentPrice * totalQty(item)), sub: `${fmt(item.currentPrice)} × ${totalQty(item)}` },
-          { label: "Coût moy.", value: fmt(avgPrice(item)), sub: `${totalQty(item)} unité${totalQty(item) > 1 ? "s" : ""}` },
-          { label: "PnL", value: `${isUp ? "+" : ""}${fmt(pnL)}`, sub: `${isUp ? "+" : ""}${itemPnLPct(item)}%`, hl: true, isUp },
+          { label: "Coût total", value: fmt(totalCost(item)), sub: `${totalQty(item)} unité${totalQty(item) > 1 ? "s" : ""} · moy. ${fmt(avgPrice(item))}` },
+          ...(isSold ? [
+            { label: "Vendu", value: fmt(totalSaleRevenue), sub: `${soldQty} vendu${soldQty > 1 ? "s" : ""} · ${remainingQty} restant${remainingQty > 1 ? "s" : ""}` },
+          ] : [
+            { label: "Valeur act.", value: fmt(item.currentPrice * totalQty(item)), sub: `${fmt(item.currentPrice)} × ${totalQty(item)}` },
+          ]),
+          { label: isSold ? "P&L réel" : "P&L estimé", value: `${isUp ? "+" : ""}${fmt(totalPnL)}`, sub: isSold && realizedPnL !== 0 ? `Réalisé: ${realizedPnL >= 0 ? "+" : ""}${fmt(realizedPnL)}` : `${isUp ? "+" : ""}${((totalPnL / totalCost(item)) * 100).toFixed(1)}%`, hl: true, isUp },
         ].map((s, i) => (
           <div key={i} style={{ background: "#f8fafc", borderRadius: 8, padding: 10 }}>
             <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
@@ -226,9 +269,76 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
         </div>
       </div>
 
+      {/* Ventes enregistrées */}
+      {isSold && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: P.text, marginBottom: 10 }}>Ventes enregistrées</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {item.sold.map((sale) => (
+              <div key={sale.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#d1fae5", borderRadius: 8, padding: "8px 12px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#065f46" }}>{PLATFORM_FEES[sale.platform]?.label || sale.platform}</div>
+                  <div style={{ fontSize: 10, color: "#047857" }}>{fmtDate(sale.date)} · {sale.quantity} unité{sale.quantity > 1 ? "s" : ""}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46" }}>{fmt(sale.netAmount)}</div>
+                  {sale.fees > 0 && <div style={{ fontSize: 9, color: "#047857" }}>-{fmt(sale.fees)} frais</div>}
+                </div>
+                <button onClick={() => deleteSale(sale.id)} style={{ background: "none", border: "none", fontSize: 14, color: "#047857", cursor: "pointer" }}
+                  onMouseEnter={(e) => (e.target.style.color = "#dc2626")} onMouseLeave={(e) => (e.target.style.color = "#047857")}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bouton/Formulaire vente */}
+      {remainingQty > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          {!showSellForm ? (
+            <button onClick={() => setShowSellForm(true)}
+              style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #16a34a", background: "#f0fdf4", color: "#16a34a", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              💰 Enregistrer une vente ({remainingQty} disponible{remainingQty > 1 ? "s" : ""})
+            </button>
+          ) : (
+            <div style={{ background: "#f0fdf4", borderRadius: 8, padding: 14, border: "1px solid #bbf7d0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#065f46" }}>Enregistrer une vente</div>
+                <button onClick={() => setShowSellForm(false)} style={{ background: "none", border: "none", fontSize: 16, color: "#047857", cursor: "pointer" }}>✕</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <Input label="Prix de vente (€)" type="number" placeholder="200" value={sellForm.price} onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })} />
+                <Input label="Quantité" type="number" placeholder="1" value={sellForm.quantity} onChange={(e) => setSellForm({ ...sellForm, quantity: e.target.value })} />
+                <Input label="Date de vente" type="date" value={sellForm.date} onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })} />
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Plateforme</label>
+                  <select value={sellForm.platform} onChange={(e) => setSellForm({ ...sellForm, platform: e.target.value })}
+                    style={{ display: "block", width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #bbf7d0", fontSize: 13, fontFamily: "inherit", background: "#fff", color: P.text, outline: "none", boxSizing: "border-box" }}>
+                    {Object.entries(PLATFORM_FEES).map(([k, v]) => (
+                      <option key={k} value={k}>{v.label} ({(v.rate * 100).toFixed(0)}% frais)</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {sellForm.price && (
+                <div style={{ background: "#dcfce7", borderRadius: 6, padding: "8px 10px", marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: "#047857", marginBottom: 4 }}>Estimation nette après frais :</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#065f46" }}>
+                    {fmt(Number(sellForm.price) * Number(sellForm.quantity || 1) * (1 - (PLATFORM_FEES[sellForm.platform]?.rate || 0)))}
+                  </div>
+                </div>
+              )}
+              <button onClick={recordSale} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                Confirmer la vente
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Nouvelle transaction */}
       <div style={{ background: "#f8fafc", borderRadius: 8, padding: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: P.text, marginBottom: 10 }}>+ Nouvelle transaction</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: P.text, marginBottom: 10 }}>+ Nouvel achat</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <Input label="Où acheté" type="text" placeholder="Amazon..." value={newTx.source} onChange={(e) => setNewTx({ ...newTx, source: e.target.value })} />
           <Input label="Date" type="date" value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} />
@@ -309,12 +419,23 @@ function WalletTab({ items, setItems, events }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
         {items.map((item) => {
           const isUp = item.currentPrice >= avgPrice(item);
+          const hasSales = item.sold && item.sold.length > 0;
+          const soldQty = hasSales ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
+          const remainingQty = totalQty(item) - soldQty;
+          const isFullySold = remainingQty === 0;
           return (
-            <Card key={item.id} onClick={() => setSelectedId(item.id)}>
+            <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{item.name}</div>
-                  <div style={{ marginBottom: 7 }}><TypeBadge type={item.type} /></div>
+                  <div style={{ marginBottom: 7, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <TypeBadge type={item.type} />
+                    {hasSales && (
+                      <span style={{ fontSize: 9, fontWeight: 600, background: isFullySold ? "#d1fae5" : "#fef3c7", color: isFullySold ? "#065f46" : "#92400e", padding: "2px 6px", borderRadius: 4 }}>
+                        {isFullySold ? "Vendu" : `${soldQty}/${totalQty(item)} vendu`}
+                      </span>
+                    )}
+                  </div>
                   <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.a4 : P.a2} />
                   <div style={{ fontSize: 10, color: P.soft, marginTop: 4 }}>{totalQty(item)} unité{totalQty(item) > 1 ? "s" : ""} · {item.transactions.length} achat{item.transactions.length > 1 ? "s" : ""} · moy. {fmt(avgPrice(item))}</div>
                 </div>
