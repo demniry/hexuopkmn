@@ -17,29 +17,10 @@ const today = () => new Date().toISOString().split("T")[0];
 // INITIAL DATA
 // ═══════════════════════════════════════════════════════════
 const INIT = {
-  items: [
-    { id: 1, name: "UPC Sulfura – Team Rocket", type: "Ultra Premium Collection", currentPrice: 410, transactions: [{ id: 101, date: "2025-12-19", price: 320, quantity: 1, source: "Auchan" }] },
-    { id: 2, name: "Bundle Evolutions Prismatiques", type: "Bundle", currentPrice: 240, transactions: [{ id: 201, date: "2025-11-10", price: 180, quantity: 1, source: "Amazon" }, { id: 202, date: "2025-12-05", price: 195, quantity: 1, source: "eBay" }] },
-    { id: 3, name: "Bundle Flammes Blanches", type: "Bundle", currentPrice: 142, transactions: [{ id: 301, date: "2025-12-01", price: 150, quantity: 1, source: "Carrefour" }] },
-  ],
-  events: [
-    { id: 1, title: "Sortie: Mega Evolution – Phantasmal Flames", date: "2026-02-14", type: "release", note: "Nouveau set très attendu, on surveille les prix de pré-commande" },
-    { id: 2, title: "Brocante Perrache", date: "2026-02-08", type: "brocante", note: "Bonne brocante, arriver avant 9h pour les meilleurs lots" },
-    { id: 3, title: "Salon du Collectible – Lyon", date: "2026-03-15", type: "event", note: "Grand salon, budget 100€ max" },
-    { id: 4, title: "Sortie: Scarlet & Violet – Next Wave", date: "2026-03-01", type: "release", note: "" },
-  ],
-  spots: [
-    { id: 1, name: "Gamemania – Part Dieu", type: "magasin", rating: 4, note: "Bon stock en général, prix un peu élevés mais personnel connaît le marché. Utile pour les dernières sorties." },
-    { id: 2, name: "eBay France", type: "online", rating: 5, note: "Meilleure source pour les sealed products. Utiliser les filtres 'acheter maintenant' + vendeur évalué." },
-    { id: 3, name: "Brocante Perrache", type: "brocante", rating: 3, note: "Très variable selon les semaines. Mieux vaut y aller tôt, avant 9h." },
-    { id: 4, name: "Carrefour City – Massoury", type: "magasin", rating: 2, note: "Rarement en stock, prix officiels. Utile en dépannage uniquement." },
-  ],
-  resources: [
-    { id: 1, title: "Pulling a Charizard VSTAR - Pack Opening", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", type: "video", note: "Vidéo super bien filmée, la qualité de présentation est inspirante pour un futur projet" },
-    { id: 2, title: "Le marché des sealed products en 2025", url: "https://example.com/article-sealed-products", type: "article", note: "Analyse claire de l'évolution des prix. Le point sur les UPC est particulièrement utile" },
-    { id: 3, title: "Tips pour acheter des cartes sur eBay sans se faire avoir", url: "https://twitter.com/pokecollector/status/123456", type: "tweet", note: "Conseils pratiques, notamment sur comment vérifier l'authenticité avant d'enchérir" },
-    { id: 4, title: "Guide complet: Investir dans les Pokémon cards", url: "https://example.com/guide-investissement", type: "article", note: "" },
-  ],
+  items: [],
+  events: [],
+  spots: [],
+  resources: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -287,7 +268,7 @@ function WalletTab({ items, setItems }) {
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
             <span style={{ background: totalPnL >= 0 ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)", padding: "3px 10px", borderRadius: 20 }}>{totalPnL >= 0 ? "+" : ""}{fmt(totalPnL)} ({totalPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-            <span style={{ opacity: 0.6, fontSize: 10 }}>vs. {fmt(totalBuy)}</span>
+            <span style={{ opacity: 0.6, fontSize: 10 }}>{fmt(totalBuy)} investis</span>
           </div>
         </div>
       </div>
@@ -410,6 +391,7 @@ function CalendarTab({ events, setEvents }) {
   const [view, setView] = useState("list"); // "list" | "grid"
   const [gridMonth, setGridMonth] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [dayPopover, setDayPopover] = useState(null); // date string "YYYY-MM-DD" or null
+  const [selectedDate, setSelectedDate] = useState(null); // date string "YYYY-MM-DD" for visual selection
   const todayStr = today();
 
   const save = (ev) => {
@@ -532,30 +514,64 @@ function CalendarTab({ events, setEvents }) {
         </div>
 
         {/* Day grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
           {cells.map((cell, i) => {
             if (!cell) return <div key={`e-${i}`} />;
             const { d, dateStr, evs } = cell;
             const isToday = dateStr === todayStr;
+            const isSelected = dateStr === selectedDate;
             const hasEvents = evs.length > 0;
             return (
               <div key={dateStr}
-                onClick={() => hasEvents && setDayPopover(dateStr)}
-                style={{
-                  aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  borderRadius: 10, background: isToday ? P.a1 : "transparent", cursor: hasEvents ? "pointer" : "default",
-                  position: "relative", transition: "background 0.15s",
+                onClick={() => {
+                  setSelectedDate(dateStr);
+                  if (hasEvents) setDayPopover(dateStr);
+                  else setDayPopover(null);
                 }}
-                onMouseEnter={(e) => { if (hasEvents && !isToday) e.currentTarget.style.background = "#ede9f5"; }}
-                onMouseLeave={(e) => { if (!isToday) e.currentTarget.style.background = "transparent"; }}
+                style={{
+                  minHeight: 70, display: "flex", flexDirection: "column", alignItems: "stretch",
+                  borderRadius: 10,
+                  background: isSelected ? "#ede9f5" : "transparent",
+                  border: isSelected ? `2px solid ${P.a1}` : "2px solid transparent",
+                  cursor: "pointer",
+                  position: "relative", transition: "all 0.15s",
+                  padding: 4,
+                }}
+                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f5f0fa"; }}
+                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
-                <div style={{ fontSize: 13, fontWeight: isToday ? 700 : 500, color: isToday ? "#fff" : P.text }}>{d}</div>
-                {/* Event dots */}
+                <div style={{
+                  fontSize: 12, fontWeight: isToday ? 700 : 500,
+                  color: isToday ? "#fff" : P.text,
+                  background: isToday ? P.a1 : "transparent",
+                  borderRadius: 6,
+                  width: 22, height: 22,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 2
+                }}>{d}</div>
+                {/* Event labels */}
                 {hasEvents && (
-                  <div style={{ display: "flex", gap: 2, marginTop: 3 }}>
-                    {evs.slice(0, 3).map((ev, idx) => (
-                      <div key={idx} style={{ width: 5, height: 5, borderRadius: "50%", background: EVENT_TYPES[ev.type]?.color || P.a1 }} />
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", flex: 1 }}>
+                    {evs.slice(0, 2).map((ev, idx) => {
+                      const t = EVENT_TYPES[ev.type];
+                      return (
+                        <div key={idx} style={{
+                          fontSize: 8, fontWeight: 600,
+                          background: t?.bg || "#f0e6ff",
+                          color: t?.color || P.a1,
+                          padding: "2px 4px",
+                          borderRadius: 4,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}>
+                          {ev.title.length > 12 ? ev.title.slice(0, 10) + "…" : ev.title}
+                        </div>
+                      );
+                    })}
+                    {evs.length > 2 && (
+                      <div style={{ fontSize: 8, color: P.soft, fontWeight: 500 }}>+{evs.length - 2}</div>
+                    )}
                   </div>
                 )}
               </div>
