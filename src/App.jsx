@@ -374,6 +374,27 @@ function WalletTab({ items, setItems, events }) {
   const totalPnLPct = totalBuy > 0 ? ((totalPnL / totalBuy) * 100).toFixed(1) : "0.0";
   const maxVal = Math.max(...items.map((i) => i.currentPrice * totalQty(i)), 1);
 
+  // Advanced stats
+  const realizedPnL = items.reduce((s, i) => {
+    if (!i.sold || i.sold.length === 0) return s;
+    const soldRevenue = i.sold.reduce((r, sale) => r + sale.netAmount, 0);
+    const soldQty = i.sold.reduce((q, sale) => q + sale.quantity, 0);
+    const soldCost = avgPrice(i) * soldQty;
+    return s + (soldRevenue - soldCost);
+  }, 0);
+
+  const bestItem = items.length > 0 ? items.reduce((best, item) => {
+    const pct = Number(itemPnLPct(item));
+    return pct > Number(itemPnLPct(best)) ? item : best;
+  }, items[0]) : null;
+
+  const worstItem = items.length > 0 ? items.reduce((worst, item) => {
+    const pct = Number(itemPnLPct(item));
+    return pct < Number(itemPnLPct(worst)) ? item : worst;
+  }, items[0]) : null;
+
+  const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
+
   const addItem = () => {
     if (!form.name || Number(form.price) <= 0) return;
     setItems([...items, { id: Date.now(), name: form.name, type: form.type, currentPrice: Number(form.currentPrice) || Number(form.price), transactions: [{ id: Date.now() + 1, date: form.date, price: Number(form.price), quantity: Number(form.quantity), source: form.source || "Non spécifié" }] }]);
@@ -402,7 +423,7 @@ function WalletTab({ items, setItems, events }) {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
         {[
           { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
           { label: "En profit", value: items.filter((i) => i.currentPrice >= avgPrice(i)).length, color: "#16a34a" },
@@ -414,6 +435,34 @@ function WalletTab({ items, setItems, events }) {
           </div>
         ))}
       </div>
+
+      {/* Advanced stats */}
+      {items.length > 0 && (
+        <Card style={{ marginBottom: 18, padding: "12px 14px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            {bestItem && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Meilleur investissement</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>+{itemPnLPct(bestItem)}%</div>
+              </div>
+            )}
+            {worstItem && Number(itemPnLPct(worstItem)) < 0 && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Pire investissement</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>{itemPnLPct(worstItem)}%</div>
+              </div>
+            )}
+            {hasAnySales && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>P&L réalisé</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Items */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
