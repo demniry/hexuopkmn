@@ -7,9 +7,35 @@ const P = {
   bg: "#f8fafc", card: "#fff", shadow: "0 2px 16px rgba(15,23,42,0.06)",
   a1: "#475569", a2: "#b45309", a3: "#047857", a4: "#16a34a",
   text: "#1e293b", soft: "#64748b",
-  accent: "#1e40af", // bleu pro pour highlights
+  accent: "#1e40af",
   danger: "#dc2626",
+  sidebar: "#1e293b",
 };
+
+// ═══════════════════════════════════════════════════════════
+// RESPONSIVE HOOK
+// ═══════════════════════════════════════════════════════════
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia(query).matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const listener = (e) => setMatches(e.matches);
+    media.addEventListener("change", listener);
+    setMatches(media.matches);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+}
+
+const useIsDesktop = () => useMediaQuery("(min-width: 900px)");
+const useIsWide = () => useMediaQuery("(min-width: 1200px)");
 
 const fmt = (n) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
@@ -64,16 +90,45 @@ function Card({ children, onClick, style: extra }) {
   );
 }
 
-function BottomModal({ onClose, children }) {
+function Modal({ onClose, children, title }) {
+  const isDesktop = useIsDesktop();
+
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", padding: "24px 24px 100px" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ width: 40, height: 5, borderRadius: 3, background: "#e2e8f0", margin: "0 auto 20px" }} />
+    <div
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(15,23,42,0.5)",
+        backdropFilter: "blur(4px)",
+        zIndex: 100,
+        display: "flex",
+        alignItems: isDesktop ? "center" : "flex-end",
+        justifyContent: "center",
+        padding: isDesktop ? 20 : 0,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: isDesktop ? 16 : "20px 20px 0 0",
+          width: "100%",
+          maxWidth: isDesktop ? 520 : 560,
+          maxHeight: isDesktop ? "85vh" : "90vh",
+          overflowY: "auto",
+          padding: isDesktop ? "28px 32px" : "24px 24px 100px",
+          boxShadow: isDesktop ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!isDesktop && <div style={{ width: 40, height: 5, borderRadius: 3, background: "#e2e8f0", margin: "0 auto 20px" }} />}
         {children}
       </div>
     </div>
   );
 }
+
+// Alias for backward compatibility
+const BottomModal = Modal;
 
 // Stars rating display
 function Stars({ rating, max = 5 }) {
@@ -388,6 +443,8 @@ function WalletTab({ items, setItems, events }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
+  const isDesktop = useIsDesktop();
+  const isWide = useIsWide();
 
   // Get releases sorted by date (most recent first), grouped by year
   const releasesByYear = useMemo(() => {
@@ -443,63 +500,150 @@ function WalletTab({ items, setItems, events }) {
 
   return (
     <div>
-      {/* Overview card */}
-      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "26px 24px 22px", color: "#fff", marginBottom: 20, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 4 }}>VALEUR TOTALE</div>
-          <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
-          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500 }}>
-            <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "6px 12px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-            <span style={{ opacity: 0.5, fontSize: 13 }}>{fmt(totalBuy)} investis</span>
+      {/* Desktop: Dashboard grid layout */}
+      {isDesktop ? (
+        <div style={{ display: "grid", gridTemplateColumns: isWide ? "1fr 1fr" : "1fr", gap: 24, marginBottom: 24 }}>
+          {/* Left: Overview */}
+          <div>
+            {/* Overview card */}
+            <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "28px", color: "#fff", boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 6 }}>VALEUR TOTALE</div>
+                <div style={{ fontSize: 42, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
+                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 14, fontSize: 15, fontWeight: 500 }}>
+                  <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "8px 14px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
+                  <span style={{ opacity: 0.5, fontSize: 14 }}>{fmt(totalBuy)} investis</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Stats + Advanced */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Stats row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
+                { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
+                { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
+              ].map((s) => (
+                <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "16px 12px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Advanced stats */}
+            {items.length > 0 && (
+              <Card style={{ padding: "18px 20px", flex: 1 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+                  {bestItem && getItemPnLPct(bestItem) > 0 && (
+                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
+                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+                    </div>
+                  )}
+                  {worstItem && getItemPnLPct(worstItem) < 0 && (
+                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
+                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+                    </div>
+                  )}
+                  {hasAnySales && (
+                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
+                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-        {[
-          { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
-          { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
-          { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
-        ].map((s) => (
-          <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "14px 10px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
+      ) : (
+        <>
+          {/* Mobile: Original stacked layout */}
+          {/* Overview card */}
+          <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "26px 24px 22px", color: "#fff", marginBottom: 20, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 4 }}>VALEUR TOTALE</div>
+              <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "6px 12px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
+                <span style={{ opacity: 0.5, fontSize: 13 }}>{fmt(totalBuy)} investis</span>
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Advanced stats */}
-      {items.length > 0 && (
-        <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-            {bestItem && getItemPnLPct(bestItem) > 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+          {/* Stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+            {[
+              { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
+              { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
+              { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
+            ].map((s) => (
+              <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "14px 10px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
               </div>
-            )}
-            {worstItem && getItemPnLPct(worstItem) < 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
-              </div>
-            )}
-            {hasAnySales && (
-              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
-              </div>
-            )}
+            ))}
           </div>
-        </Card>
+
+          {/* Advanced stats */}
+          {items.length > 0 && (
+            <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+                {bestItem && getItemPnLPct(bestItem) > 0 && (
+                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+                  </div>
+                )}
+                {worstItem && getItemPnLPct(worstItem) < 0 && (
+                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+                  </div>
+                )}
+                {hasAnySales && (
+                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Items */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+      {/* Section title on desktop */}
+      {isDesktop && items.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: P.text, margin: 0 }}>Mon Portfolio</h2>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: P.accent, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            + Ajouter
+          </button>
+        </div>
+      )}
+
+      {/* Items - Grid on desktop, list on mobile */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isWide ? "repeat(3, 1fr)" : isDesktop ? "repeat(2, 1fr)" : "1fr",
+        gap: isDesktop ? 16 : 12,
+        marginBottom: 18
+      }}>
         {items.map((item) => {
           const realPnL = getItemPnL(item);
           const realPnLPct = getItemPnLPct(item);
@@ -1247,6 +1391,72 @@ const TABS = [
 ];
 
 
+// ═══════════════════════════════════════════════════════════
+// SIDEBAR COMPONENT (Desktop only)
+// ═══════════════════════════════════════════════════════════
+function Sidebar({ tab, setTab }) {
+  return (
+    <div style={{
+      width: 240,
+      background: P.sidebar,
+      height: "100vh",
+      position: "fixed",
+      left: 0,
+      top: 0,
+      display: "flex",
+      flexDirection: "column",
+      zIndex: 40,
+    }}>
+      {/* Logo */}
+      <div style={{ padding: "28px 24px 24px" }}>
+        <span style={{ fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>Hexuo</span>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Portfolio Manager</div>
+      </div>
+
+      {/* Navigation */}
+      <nav style={{ flex: 1, padding: "0 12px" }}>
+        {TABS.map((t) => {
+          const isActive = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                width: "100%",
+                padding: "14px 16px",
+                marginBottom: 4,
+                borderRadius: 10,
+                border: "none",
+                background: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+                color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
+                fontSize: 15,
+                fontWeight: isActive ? 600 : 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                textAlign: "left",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+            >
+              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              {t.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>v1.0 — Données locales</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState("wallet");
   const [items, setItems] = useState(INIT.items);
@@ -1254,6 +1464,7 @@ export default function App() {
   const [spots, setSpots] = useState(INIT.spots);
   const [resources, setResources] = useState(INIT.resources);
   const [loaded, setLoaded] = useState(false);
+  const isDesktop = useIsDesktop();
 
   // Migration V2→V3 items
   const migrateItems = (raw) => raw.map((item) => {
@@ -1276,6 +1487,51 @@ export default function App() {
   useEffect(() => { if (!loaded) return; try { localStorage.setItem("pokemon-wallet-spots", JSON.stringify(spots)); } catch (e) {} }, [spots, loaded]);
   useEffect(() => { if (!loaded) return; try { localStorage.setItem("hexuo-resources", JSON.stringify(resources)); } catch (e) {} }, [resources, loaded]);
 
+  // Desktop layout with sidebar
+  if (isDesktop) {
+    return (
+      <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text }}>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+        {/* Sidebar */}
+        <Sidebar tab={tab} setTab={setTab} />
+
+        {/* Main content */}
+        <div style={{ marginLeft: 240, minHeight: "100vh" }}>
+          {/* Header */}
+          <header style={{
+            background: "rgba(255,255,255,0.8)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #e2e8f0",
+            padding: "20px 40px",
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: P.text, margin: 0 }}>
+              {TABS.find(t => t.id === tab)?.label || "Hexuo"}
+            </h1>
+            <div style={{ fontSize: 13, color: P.soft }}>
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+          </header>
+
+          {/* Page content */}
+          <main style={{ padding: "32px 40px", maxWidth: 1400, margin: "0 auto" }}>
+            {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
+            {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
+            {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
+            {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile layout (original)
   return (
     <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
