@@ -34,10 +34,10 @@ function Blob({ style }) {
 
 function Input({ label, type, placeholder, value, onChange, style: extraStyle }) {
   return (
-    <div style={{ marginBottom: 10, ...extraStyle }}>
-      <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>{label}</label>
+    <div style={{ marginBottom: 14, ...extraStyle }}>
+      <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginBottom: 6, display: "block" }}>{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={onChange}
-        style={{ display: "block", width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text }}
+        style={{ display: "block", width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text }}
         onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
       />
     </div>
@@ -47,7 +47,7 @@ function Input({ label, type, placeholder, value, onChange, style: extraStyle })
 function AddButton({ onClick }) {
   return (
     <button onClick={onClick}
-      style={{ width: "100%", padding: "14px", border: "1px dashed #cbd5e1", borderRadius: 10, background: "transparent", color: P.soft, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s, color 0.2s" }}
+      style={{ width: "100%", padding: "18px", border: "2px dashed #cbd5e1", borderRadius: 12, background: "transparent", color: P.soft, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s, color 0.2s" }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.a1; e.currentTarget.style.color = P.a1; }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.color = P.soft; }}
     >+ Ajouter</button>
@@ -57,7 +57,7 @@ function AddButton({ onClick }) {
 function Card({ children, onClick, style: extra }) {
   return (
     <div onClick={onClick}
-      style={{ background: P.card, borderRadius: 12, padding: "14px 16px", boxShadow: P.shadow, border: "1px solid #e2e8f0", cursor: onClick ? "pointer" : "default", transition: "transform 0.2s, box-shadow 0.2s", ...extra }}
+      style={{ background: P.card, borderRadius: 14, padding: "18px 20px", boxShadow: P.shadow, border: "1px solid #e2e8f0", cursor: onClick ? "pointer" : "default", transition: "transform 0.2s, box-shadow 0.2s", ...extra }}
       onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(15,23,42,0.1)"; }}}
       onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = P.shadow; }}}
     >{children}</div>
@@ -67,8 +67,8 @@ function Card({ children, onClick, style: extra }) {
 function BottomModal({ onClose, children }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", padding: "20px 20px 40px" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0", margin: "0 auto 18px" }} />
+      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", padding: "24px 24px 100px" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 40, height: 5, borderRadius: 3, background: "#e2e8f0", margin: "0 auto 20px" }} />
         {children}
       </div>
     </div>
@@ -78,7 +78,7 @@ function BottomModal({ onClose, children }) {
 // Stars rating display
 function Stars({ rating, max = 5 }) {
   return (
-    <span style={{ fontSize: 13, letterSpacing: 1 }}>
+    <span style={{ fontSize: 16, letterSpacing: 2 }}>
       {"★".repeat(rating)}<span style={{ color: "#e2e8f0" }}>{"★".repeat(max - rating)}</span>
     </span>
   );
@@ -132,14 +132,14 @@ function TypeBadge({ type }) {
     "Collection Box": { bg: "#d1fae5", text: "#065f46" }
   };
   const c = map[type] || { bg: "#f1f5f9", text: "#475569" };
-  return <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", background: c.bg, color: c.text, padding: "3px 8px", borderRadius: 4, display: "inline-block" }}>{type}</span>;
+  return <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", background: c.bg, color: c.text, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{type}</span>;
 }
 
 function MiniBar({ value, max, color }) {
   const w = Math.max((value / max) * 100, 6);
   return (
-    <div style={{ width: "100%", height: 4, borderRadius: 2, background: "#e2e8f0", overflow: "hidden" }}>
-      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
+    <div style={{ width: "100%", height: 6, borderRadius: 3, background: "#e2e8f0", overflow: "hidden" }}>
+      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
     </div>
   );
 }
@@ -150,18 +150,18 @@ function DonutChart({ items }) {
   const colors = ["#475569", "#0369a1", "#047857", "#b45309", "#7c3aed", "#be185d", "#0891b2", "#4f46e5"];
   let cumul = 0;
   const segments = items.map((item, idx) => { const val = (item.currentPrice * totalQty(item)) / total; const start = cumul; cumul += val; return { item, val, start, color: colors[idx % colors.length] }; });
-  const size = 110, cx = size / 2, cy = size / 2, r = 42;
+  const size = 130, cx = size / 2, cy = size / 2, r = 50;
   const arc = (s, e) => { const a1 = s * 2 * Math.PI - Math.PI / 2, a2 = e * 2 * Math.PI - Math.PI / 2; return `M ${cx} ${cy} L ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${e - s > 0.5 ? 1 : 0} 1 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)} Z`; };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
         {segments.map((seg, i) => <path key={i} d={arc(seg.start, seg.start + seg.val)} fill={seg.color} stroke="#fff" strokeWidth="2" />)}
-        <circle cx={cx} cy={cy} r={20} fill="#fff" />
-        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="11" fontWeight="700" fill={P.text}>{items.length}</text>
-        <text x={cx} y={cy + 7} textAnchor="middle" fontSize="6.5" fill={P.soft}>items</text>
+        <circle cx={cx} cy={cy} r={24} fill="#fff" />
+        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="14" fontWeight="700" fill={P.text}>{items.length}</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize="9" fill={P.soft}>items</text>
       </svg>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-        {items.map((item, idx) => <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: colors[idx % colors.length], flexShrink: 0 }} /><span style={{ fontSize: 11, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span><span style={{ fontSize: 11, fontWeight: 600, color: P.soft }}>{((item.currentPrice * totalQty(item)) / total * 100).toFixed(1)}%</span></div>)}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((item, idx) => <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 12, height: 12, borderRadius: 3, background: colors[idx % colors.length], flexShrink: 0 }} /><span style={{ fontSize: 13, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span><span style={{ fontSize: 13, fontWeight: 600, color: P.soft }}>{((item.currentPrice * totalQty(item)) / total * 100).toFixed(1)}%</span></div>)}
       </div>
     </div>
   );
@@ -222,13 +222,13 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 
   return (
     <BottomModal onClose={onClose}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-        <div><div style={{ fontSize: 17, fontWeight: 700, color: P.text }}>{item.name}</div><div style={{ marginTop: 5 }}><TypeBadge type={item.type} /></div></div>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+        <div><div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{item.name}</div><div style={{ marginTop: 8 }}><TypeBadge type={item.type} /></div></div>
+        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: isSold ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isSold ? "1fr 1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 22 }}>
         {[
           { label: "Coût total", value: fmt(totalCost(item)), sub: `${totalQty(item)} unité${totalQty(item) > 1 ? "s" : ""} · moy. ${fmt(avgPrice(item))}` },
           ...(isSold ? [
@@ -238,63 +238,63 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           ]),
           { label: isSold ? "P&L réel" : "P&L estimé", value: `${isUp ? "+" : ""}${fmt(totalPnL)}`, sub: isSold && realizedPnL !== 0 ? `Réalisé: ${realizedPnL >= 0 ? "+" : ""}${fmt(realizedPnL)}` : `${isUp ? "+" : ""}${((totalPnL / totalCost(item)) * 100).toFixed(1)}%`, hl: true, isUp },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#f8fafc", borderRadius: 8, padding: 10 }}>
-            <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: s.hl ? (s.isUp ? "#16a34a" : "#dc2626") : P.text }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: P.soft, marginTop: 2 }}>{s.sub}</div>
+          <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: s.hl ? (s.isUp ? "#16a34a" : "#dc2626") : P.text }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: P.soft, marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Prix editable */}
-      <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: "#f8fafc", borderRadius: 10, padding: "14px 16px", marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 2 }}>Prix actuel</div>
-          {!editingPrice ? <div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div> : (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Prix actuel</div>
+          {!editingPrice ? <div style={{ fontSize: 24, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div> : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} autoFocus onKeyDown={(e) => { if (e.key === "Enter") savePrice(); }}
-                style={{ width: 80, padding: "4px 8px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 16, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
-              <span style={{ fontSize: 13, color: P.soft }}>€</span>
-              <button onClick={savePrice} style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
-              <button onClick={() => setEditingPrice(false)} style={{ fontSize: 10, color: P.soft, background: "transparent", border: "none", cursor: "pointer" }}>✕</button>
+                style={{ width: 90, padding: "6px 10px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 18, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+              <span style={{ fontSize: 15, color: P.soft }}>€</span>
+              <button onClick={savePrice} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+              <button onClick={() => setEditingPrice(false)} style={{ fontSize: 14, color: P.soft, background: "transparent", border: "none", cursor: "pointer" }}>✕</button>
             </div>
           )}
         </div>
-        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 10, fontWeight: 600, color: P.a1, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
+        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.a1, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
       </div>
 
       {/* Historique */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: P.text, marginBottom: 10 }}>Historique des achats</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: P.text, marginBottom: 12 }}>Historique des achats</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[...item.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tx) => {
             if (editingTxId === tx.id) {
               return (
-                <div key={tx.id} style={{ background: "#f1f5f9", borderRadius: 12, padding: "10px 12px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                <div key={tx.id} style={{ background: "#f1f5f9", borderRadius: 12, padding: "12px 14px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
                     {[{ key: "source", label: "Où acheté", type: "text" }, { key: "date", label: "Date", type: "date" }, { key: "price", label: "Prix (€)", type: "number" }, { key: "quantity", label: "Quantité", type: "number" }].map((f) => (
                       <div key={f.key}>
-                        <div style={{ fontSize: 8.5, color: P.soft, fontWeight: 500, marginBottom: 3 }}>{f.label}</div>
+                        <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, marginBottom: 4 }}>{f.label}</div>
                         <input type={f.type} value={editTx[f.key]} onChange={(e) => setEditTx({ ...editTx, [f.key]: e.target.value })}
-                          style={{ width: "100%", padding: "5px 8px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#fff", color: P.text }} />
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#fff", color: P.text }} />
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => saveTx(tx.id)} style={{ flex: 1, fontSize: 10, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "5px 0", cursor: "pointer", fontFamily: "inherit" }}>Sauvegarder</button>
-                    <button onClick={() => setEditingTxId(null)} style={{ fontSize: 10, color: P.soft, background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
-                    <button onClick={() => deleteTx(tx.id)} style={{ fontSize: 10, fontWeight: 600, color: "#dc2626", background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>Supprimer</button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => saveTx(tx.id)} style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "8px 0", cursor: "pointer", fontFamily: "inherit" }}>Sauvegarder</button>
+                    <button onClick={() => setEditingTxId(null)} style={{ fontSize: 13, color: P.soft, background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
+                    <button onClick={() => deleteTx(tx.id)} style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>Supprimer</button>
                   </div>
                 </div>
               );
             }
             return (
               <div key={tx.id} onClick={() => { setEditingTxId(tx.id); setEditTx({ source: tx.source, date: tx.date, price: String(tx.price), quantity: String(tx.quantity) }); }}
-                style={{ display: "flex", alignItems: "center", gap: 10, background: "#f8fafc", borderRadius: 12, padding: "8px 12px", cursor: "pointer" }}
+                style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "10px 14px", cursor: "pointer" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600, color: P.text }}>{tx.source}</div><div style={{ fontSize: 10, color: P.soft }}>{fmtDate(tx.date)} · Qté : {tx.quantity}</div></div>
-                <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 700, color: P.text }}>{fmt(tx.price)}</div><div style={{ fontSize: 9, color: P.soft }}>/ unité</div></div>
-                <div style={{ fontSize: 12, color: P.soft }}>›</div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600, color: P.text }}>{tx.source}</div><div style={{ fontSize: 12, color: P.soft }}>{fmtDate(tx.date)} · Qté : {tx.quantity}</div></div>
+                <div style={{ textAlign: "right" }}><div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{fmt(tx.price)}</div><div style={{ fontSize: 11, color: P.soft }}>/ unité</div></div>
+                <div style={{ fontSize: 14, color: P.soft }}>›</div>
               </div>
             );
           })}
@@ -303,20 +303,20 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 
       {/* Ventes enregistrées */}
       {isSold && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: P.text, marginBottom: 10 }}>Ventes enregistrées</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: P.text, marginBottom: 12 }}>Ventes enregistrées</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {item.sold.map((sale) => (
-              <div key={sale.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#d1fae5", borderRadius: 8, padding: "8px 12px" }}>
+              <div key={sale.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#d1fae5", borderRadius: 10, padding: "12px 14px" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#065f46" }}>{PLATFORM_FEES[sale.platform]?.label || sale.platform}</div>
-                  <div style={{ fontSize: 10, color: "#047857" }}>{fmtDate(sale.date)} · {sale.quantity} unité{sale.quantity > 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#065f46" }}>{PLATFORM_FEES[sale.platform]?.label || sale.platform}</div>
+                  <div style={{ fontSize: 12, color: "#047857" }}>{fmtDate(sale.date)} · {sale.quantity} unité{sale.quantity > 1 ? "s" : ""}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46" }}>{fmt(sale.netAmount)}</div>
-                  {sale.fees > 0 && <div style={{ fontSize: 9, color: "#047857" }}>-{fmt(sale.fees)} frais</div>}
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#065f46" }}>{fmt(sale.netAmount)}</div>
+                  {sale.fees > 0 && <div style={{ fontSize: 11, color: "#047857" }}>-{fmt(sale.fees)} frais</div>}
                 </div>
-                <button onClick={() => deleteSale(sale.id)} style={{ background: "none", border: "none", fontSize: 14, color: "#047857", cursor: "pointer" }}
+                <button onClick={() => deleteSale(sale.id)} style={{ background: "none", border: "none", fontSize: 18, color: "#047857", cursor: "pointer" }}
                   onMouseEnter={(e) => (e.target.style.color = "#dc2626")} onMouseLeave={(e) => (e.target.style.color = "#047857")}>×</button>
               </div>
             ))}
@@ -326,26 +326,26 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 
       {/* Bouton/Formulaire vente */}
       {remainingQty > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 18 }}>
           {!showSellForm ? (
             <button onClick={() => setShowSellForm(true)}
-              style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #16a34a", background: "#f0fdf4", color: "#16a34a", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ width: "100%", padding: 14, borderRadius: 10, border: "1px solid #16a34a", background: "#f0fdf4", color: "#16a34a", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               💰 Enregistrer une vente ({remainingQty} disponible{remainingQty > 1 ? "s" : ""})
             </button>
           ) : (
-            <div style={{ background: "#f0fdf4", borderRadius: 8, padding: 14, border: "1px solid #bbf7d0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#065f46" }}>Enregistrer une vente</div>
-                <button onClick={() => setShowSellForm(false)} style={{ background: "none", border: "none", fontSize: 16, color: "#047857", cursor: "pointer" }}>✕</button>
+            <div style={{ background: "#f0fdf4", borderRadius: 10, padding: 16, border: "1px solid #bbf7d0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#065f46" }}>Enregistrer une vente</div>
+                <button onClick={() => setShowSellForm(false)} style={{ background: "none", border: "none", fontSize: 20, color: "#047857", cursor: "pointer" }}>✕</button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <Input label="Prix de vente (€)" type="number" placeholder="200" value={sellForm.price} onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })} />
                 <Input label="Quantité" type="number" placeholder="1" value={sellForm.quantity} onChange={(e) => setSellForm({ ...sellForm, quantity: e.target.value })} />
                 <Input label="Date de vente" type="date" value={sellForm.date} onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })} />
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Plateforme</label>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Plateforme</label>
                   <select value={sellForm.platform} onChange={(e) => setSellForm({ ...sellForm, platform: e.target.value })}
-                    style={{ display: "block", width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #bbf7d0", fontSize: 13, fontFamily: "inherit", background: "#fff", color: P.text, outline: "none", boxSizing: "border-box" }}>
+                    style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #bbf7d0", fontSize: 15, fontFamily: "inherit", background: "#fff", color: P.text, outline: "none", boxSizing: "border-box" }}>
                     {Object.entries(PLATFORM_FEES).map(([k, v]) => (
                       <option key={k} value={k}>{v.label} ({(v.rate * 100).toFixed(0)}% frais)</option>
                     ))}
@@ -353,14 +353,14 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
                 </div>
               </div>
               {sellForm.price && (
-                <div style={{ background: "#dcfce7", borderRadius: 6, padding: "8px 10px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: "#047857", marginBottom: 4 }}>Estimation nette après frais :</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#065f46" }}>
+                <div style={{ background: "#dcfce7", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: "#047857", marginBottom: 4 }}>Estimation nette après frais :</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#065f46" }}>
                     {fmt(Number(sellForm.price) * Number(sellForm.quantity || 1) * (1 - (PLATFORM_FEES[sellForm.platform]?.rate || 0)))}
                   </div>
                 </div>
               )}
-              <button onClick={recordSale} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={recordSale} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#16a34a", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 Confirmer la vente
               </button>
             </div>
@@ -369,15 +369,15 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       )}
 
       {/* Nouvelle transaction */}
-      <div style={{ background: "#f8fafc", borderRadius: 8, padding: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: P.text, marginBottom: 10 }}>+ Nouvel achat</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: P.text, marginBottom: 12 }}>+ Nouvel achat</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Input label="Où acheté" type="text" placeholder="Amazon..." value={newTx.source} onChange={(e) => setNewTx({ ...newTx, source: e.target.value })} />
           <Input label="Date" type="date" value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} />
           <Input label="Prix (€)" type="number" placeholder="180" value={newTx.price} onChange={(e) => setNewTx({ ...newTx, price: e.target.value })} />
           <Input label="Quantité" type="number" placeholder="1" value={newTx.quantity} onChange={(e) => setNewTx({ ...newTx, quantity: e.target.value })} />
         </div>
-        <button onClick={addTx} style={{ width: "100%", padding: 8, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>Ajouter achat</button>
+        <button onClick={addTx} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>Ajouter achat</button>
       </div>
     </BottomModal>
   );
@@ -444,54 +444,54 @@ function WalletTab({ items, setItems, events }) {
   return (
     <div>
       {/* Overview card */}
-      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 8, padding: "22px 22px 18px", color: "#fff", marginBottom: 16, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "26px 24px 22px", color: "#fff", marginBottom: 20, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 2 }}>VALEUR TOTALE</div>
-          <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
-          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, fontSize: 12, fontWeight: 500 }}>
-            <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "4px 10px", borderRadius: 6 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-            <span style={{ opacity: 0.5, fontSize: 11 }}>{fmt(totalBuy)} investis</span>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 4 }}>VALEUR TOTALE</div>
+          <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500 }}>
+            <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "6px 12px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
+            <span style={{ opacity: 0.5, fontSize: 13 }}>{fmt(totalBuy)} investis</span>
           </div>
         </div>
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
         {[
           { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
           { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
           { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
         ].map((s) => (
-          <div key={s.label} style={{ background: P.card, borderRadius: 10, padding: "12px 8px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 2 }}>{s.label}</div>
+          <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "14px 10px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Advanced stats */}
       {items.length > 0 && (
-        <Card style={{ marginBottom: 18, padding: "12px 14px" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+        <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
             {bestItem && getItemPnLPct(bestItem) > 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Meilleur investissement</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
               </div>
             )}
             {worstItem && getItemPnLPct(worstItem) < 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Pire investissement</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
               </div>
             )}
             {hasAnySales && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>P&L réalisé</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+              <div style={{ flex: "1 1 45%", minWidth: 130 }}>
+                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
               </div>
             )}
           </div>
@@ -499,7 +499,7 @@ function WalletTab({ items, setItems, events }) {
       )}
 
       {/* Items */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {items.map((item) => {
           const realPnL = getItemPnL(item);
           const realPnLPct = getItemPnLPct(item);
@@ -510,25 +510,25 @@ function WalletTab({ items, setItems, events }) {
           const isFullySold = remainingQty === 0;
           return (
             <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{item.name}</div>
-                  <div style={{ marginBottom: 7, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{item.name}</div>
+                  <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <TypeBadge type={item.type} />
                     {hasSales && (
-                      <span style={{ fontSize: 9, fontWeight: 600, background: isFullySold ? "#d1fae5" : "#fef3c7", color: isFullySold ? "#065f46" : "#92400e", padding: "2px 6px", borderRadius: 4 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, background: isFullySold ? "#d1fae5" : "#fef3c7", color: isFullySold ? "#065f46" : "#92400e", padding: "3px 8px", borderRadius: 6 }}>
                         {isFullySold ? "Vendu" : `${soldQty}/${totalQty(item)} vendu`}
                       </span>
                     )}
                   </div>
                   <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.a4 : P.a2} />
-                  <div style={{ fontSize: 10, color: P.soft, marginTop: 4 }}>{totalQty(item)} unité{totalQty(item) > 1 ? "s" : ""} · {item.transactions.length} achat{item.transactions.length > 1 ? "s" : ""} · moy. {fmt(avgPrice(item))}</div>
+                  <div style={{ fontSize: 12, color: P.soft, marginTop: 6 }}>{totalQty(item)} unité{totalQty(item) > 1 ? "s" : ""} · {item.transactions.length} achat{item.transactions.length > 1 ? "s" : ""} · moy. {fmt(avgPrice(item))}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{hasSales && isFullySold ? fmt(realPnL + totalCost(item)) : fmt(item.currentPrice)}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626", marginTop: 2 }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{hasSales && isFullySold ? fmt(realPnL + totalCost(item)) : fmt(item.currentPrice)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626", marginTop: 4 }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
                 </div>
-                <div style={{ color: P.soft, fontSize: 16, flexShrink: 0 }}>›</div>
+                <div style={{ color: P.soft, fontSize: 20, flexShrink: 0 }}>›</div>
               </div>
             </Card>
           );
@@ -634,25 +634,25 @@ function EventFormModal({ onClose, onAdd, editItem }) {
   const submit = () => { if (!form.title || !form.date) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
   return (
     <BottomModal onClose={onClose}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvel"} événement</div>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvel"} événement</div>
+        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
       </div>
       <Input label="Titre" type="text" placeholder="Ex: Sortie Phantasmal Flames" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
       <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
-        <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
+        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
           {Object.entries(EVENT_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
         </div>
       </div>
       <Input label="Note (optionnel)" type="text" placeholder="Détails..." value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -704,24 +704,24 @@ function CalendarTab({ events, setEvents }) {
               const days = Math.round((new Date(ev.date + "T12:00:00") - new Date(todayStr + "T12:00:00")) / 86400000);
               return (
                 <Card key={ev.id} style={{ opacity: isPast ? 0.5 : 1 }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                    <div style={{ background: isPast ? "#eee" : t.bg, borderRadius: 8, padding: "8px 10px", textAlign: "center", flexShrink: 0, minWidth: 48 }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: isPast ? "#999" : t.color, lineHeight: 1.1 }}>{new Date(ev.date + "T12:00:00").getDate()}</div>
-                      <div style={{ fontSize: 8.5, color: isPast ? "#999" : t.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{new Date(ev.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short" })}</div>
+                  <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                    <div style={{ background: isPast ? "#eee" : t.bg, borderRadius: 10, padding: "10px 12px", textAlign: "center", flexShrink: 0, minWidth: 54 }}>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: isPast ? "#999" : t.color, lineHeight: 1.1 }}>{new Date(ev.date + "T12:00:00").getDate()}</div>
+                      <div style={{ fontSize: 10, color: isPast ? "#999" : t.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{new Date(ev.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short" })}</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
-                        {isToday && <span style={{ fontSize: 9, fontWeight: 600, color: "#16a34a", background: "#f0fff4", padding: "1.5px 6px", borderRadius: 6 }}>Aujourd'hui</span>}
-                        {!isPast && !isToday && days <= 7 && <span style={{ fontSize: 9, fontWeight: 600, color: "#dc2626", background: "#fff0f0", padding: "1.5px 6px", borderRadius: 6 }}>Dans {days}j</span>}
-                        {isPast && <span style={{ fontSize: 9, color: "#999", background: "#f0f0f0", padding: "1.5px 6px", borderRadius: 6 }}>Il y a {Math.abs(days)}j</span>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, background: t.bg, color: t.color, padding: "3px 9px", borderRadius: 6 }}>{t.icon} {t.label}</span>
+                        {isToday && <span style={{ fontSize: 11, fontWeight: 600, color: "#16a34a", background: "#f0fff4", padding: "3px 8px", borderRadius: 6 }}>Aujourd'hui</span>}
+                        {!isPast && !isToday && days <= 7 && <span style={{ fontSize: 11, fontWeight: 600, color: "#dc2626", background: "#fff0f0", padding: "3px 8px", borderRadius: 6 }}>Dans {days}j</span>}
+                        {isPast && <span style={{ fontSize: 11, color: "#999", background: "#f0f0f0", padding: "3px 8px", borderRadius: 6 }}>Il y a {Math.abs(days)}j</span>}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: P.text }}>{ev.title}</div>
-                      {ev.note && <div style={{ fontSize: 10, color: P.soft, marginTop: 3 }}>{ev.note}</div>}
+                      <div style={{ fontSize: 15, fontWeight: 600, color: P.text }}>{ev.title}</div>
+                      {ev.note && <div style={{ fontSize: 12, color: P.soft, marginTop: 4 }}>{ev.note}</div>}
                     </div>
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button onClick={() => setEditEvent(ev)} style={{ background: "none", border: "none", fontSize: 14, color: P.soft, cursor: "pointer" }}>✎</button>
-                      <button onClick={() => del(ev.id)} style={{ background: "none", border: "none", fontSize: 14, color: P.soft, cursor: "pointer" }}
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => setEditEvent(ev)} style={{ background: "none", border: "none", fontSize: 16, color: P.soft, cursor: "pointer" }}>✎</button>
+                      <button onClick={() => del(ev.id)} style={{ background: "none", border: "none", fontSize: 16, color: P.soft, cursor: "pointer" }}
                         onMouseEnter={(e) => (e.target.style.color = "#dc2626")} onMouseLeave={(e) => (e.target.style.color = P.soft)}>×</button>
                     </div>
                   </div>
@@ -772,21 +772,21 @@ function CalendarTab({ events, setEvents }) {
     return (
       <div>
         {/* Month navigator */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", fontSize: 20, color: P.a1, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }}>‹</button>
-          <div style={{ fontSize: 14, fontWeight: 700, color: P.text }}>{mLabelCap}</div>
-          <button onClick={nextMonth} style={{ background: "none", border: "none", fontSize: 20, color: P.a1, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }}>›</button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <button onClick={prevMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.a1, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>‹</button>
+          <div style={{ fontSize: 17, fontWeight: 700, color: P.text }}>{mLabelCap}</div>
+          <button onClick={nextMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.a1, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>›</button>
         </div>
 
         {/* Weekday headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, marginBottom: 6 }}>
           {["L", "M", "M", "J", "V", "S", "D"].map((label, i) => (
-            <div key={i} style={{ textAlign: "center", fontSize: 9.5, fontWeight: 600, color: P.soft, paddingBottom: 6 }}>{label}</div>
+            <div key={i} style={{ textAlign: "center", fontSize: 12, fontWeight: 600, color: P.soft, paddingBottom: 8 }}>{label}</div>
           ))}
         </div>
 
         {/* Day grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 }}>
           {cells.map((cell, i) => {
             if (!cell) return <div key={`e-${i}`} />;
             const { d, dateStr, evs } = cell;
@@ -801,38 +801,38 @@ function CalendarTab({ events, setEvents }) {
                   else setDayPopover(null);
                 }}
                 style={{
-                  minHeight: 70, display: "flex", flexDirection: "column", alignItems: "stretch",
+                  minHeight: 80, display: "flex", flexDirection: "column", alignItems: "stretch",
                   borderRadius: 10,
                   background: isSelected ? "#f1f5f9" : "transparent",
                   border: isSelected ? `2px solid ${P.a1}` : "2px solid transparent",
                   cursor: "pointer",
                   position: "relative", transition: "all 0.15s",
-                  padding: 4,
+                  padding: 5,
                 }}
                 onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f8fafc"; }}
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
                 <div style={{
-                  fontSize: 12, fontWeight: isToday ? 700 : 500,
+                  fontSize: 14, fontWeight: isToday ? 700 : 500,
                   color: isToday ? "#fff" : P.text,
                   background: isToday ? P.a1 : "transparent",
-                  borderRadius: 6,
-                  width: 22, height: 22,
+                  borderRadius: 7,
+                  width: 26, height: 26,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 2
+                  marginBottom: 3
                 }}>{d}</div>
                 {/* Event labels */}
                 {hasEvents && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", flex: 1 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, overflow: "hidden", flex: 1 }}>
                     {evs.slice(0, 2).map((ev, idx) => {
                       const t = EVENT_TYPES[ev.type];
                       return (
                         <div key={idx} style={{
-                          fontSize: 8, fontWeight: 600,
+                          fontSize: 9, fontWeight: 600,
                           background: t?.bg || "#f1f5f9",
                           color: t?.color || P.a1,
-                          padding: "2px 4px",
-                          borderRadius: 4,
+                          padding: "3px 5px",
+                          borderRadius: 5,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis"
@@ -888,10 +888,10 @@ function CalendarTab({ events, setEvents }) {
   return (
     <div>
       {/* View toggle */}
-      <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 12, padding: 3, marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 14, padding: 4, marginBottom: 20 }}>
         {[{ id: "list", label: "Liste", icon: "☰" }, { id: "grid", label: "Calendrier", icon: "⊞" }].map((v) => (
           <button key={v.id} onClick={() => setView(v.id)}
-            style={{ flex: 1, padding: "7px 4px", borderRadius: 10, border: "none", background: view === v.id ? "#fff" : "transparent", color: view === v.id ? P.text : P.soft, fontSize: 11, fontWeight: view === v.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", boxShadow: view === v.id ? "0 1px 6px rgba(100,80,140,0.12)" : "none" }}>
+            style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "none", background: view === v.id ? "#fff" : "transparent", color: view === v.id ? P.text : P.soft, fontSize: 14, fontWeight: view === v.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", boxShadow: view === v.id ? "0 1px 6px rgba(100,80,140,0.12)" : "none" }}>
             {v.icon} {v.label}
           </button>
         ))}
@@ -922,38 +922,38 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
   const submit = () => { if (!form.name) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
   return (
     <BottomModal onClose={onClose}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouveau"} spot</div>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouveau"} spot</div>
+        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
       </div>
       <Input label="Nom" type="text" placeholder="Ex: Gamemania Part Dieu" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
-        <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
+        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
           {Object.entries(SPOT_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: 1, padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
         </div>
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note</label>
-        <div style={{ display: "flex", gap: 4, marginTop: 5 }}>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note</label>
+        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button key={n} onClick={() => setForm({ ...form, rating: n })}
-              style={{ fontSize: 22, background: "none", border: "none", cursor: "pointer", color: n <= form.rating ? "#f59e0b" : "#e2e8f0", padding: "0 2px" }}>★</button>
+              style={{ fontSize: 28, background: "none", border: "none", cursor: "pointer", color: n <= form.rating ? "#f59e0b" : "#e2e8f0", padding: "0 4px" }}>★</button>
           ))}
         </div>
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Commentaire</label>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Commentaire</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions..." rows={3}
-          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none" }}
+          style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
           onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -987,66 +987,66 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
   return (
     <BottomModal onClose={onClose}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, background: t.bg, color: t.color, padding: "4px 10px", borderRadius: 8 }}>{t.icon} {t.label}</span>
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{spot.name}</div>
-          <div style={{ marginTop: 3 }}><Stars rating={spot.rating} /></div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{spot.name}</div>
+          <div style={{ marginTop: 6 }}><Stars rating={spot.rating} /></div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={onEdit} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 10, fontWeight: 600, color: P.a1, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onEdit} style={{ background: "#f1f5f9", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 600, color: P.a1, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
         </div>
       </div>
 
       {/* Note */}
       {spot.note && (
-        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 12px", marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: P.soft, lineHeight: 1.5 }}>{spot.note}</div>
+        <div style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
+          <div style={{ fontSize: 14, color: P.soft, lineHeight: 1.5 }}>{spot.note}</div>
         </div>
       )}
 
       {/* Purchase history */}
-      <div style={{ fontSize: 12, fontWeight: 600, color: P.text, marginBottom: 10 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: P.text, marginBottom: 12 }}>
         Achats à ce spot
       </div>
 
       {purchases.length === 0 ? (
-        <div style={{ background: "#f8fafc", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 6 }}>🛒</div>
-          <div style={{ fontSize: 12, color: P.soft }}>Aucun achat enregistré ici.</div>
-          <div style={{ fontSize: 10, color: P.soft, marginTop: 3, opacity: 0.7 }}>Les achats apparaissent automatiquement quand la source dans le Wallet correspond à ce spot.</div>
+        <div style={{ background: "#f8fafc", borderRadius: 12, padding: "22px 18px", textAlign: "center" }}>
+          <div style={{ fontSize: 34, marginBottom: 8 }}>🛒</div>
+          <div style={{ fontSize: 14, color: P.soft }}>Aucun achat enregistré ici.</div>
+          <div style={{ fontSize: 12, color: P.soft, marginTop: 4, opacity: 0.7 }}>Les achats apparaissent automatiquement quand la source dans le Wallet correspond à ce spot.</div>
         </div>
       ) : (
         <>
           {/* Summary row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
-              <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 3 }}>Total dépensé</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: P.a1 }}>{fmt(totalSpent)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Total dépensé</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: P.a1 }}>{fmt(totalSpent)}</div>
             </div>
-            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "10px 12px" }}>
-              <div style={{ fontSize: 9, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 3 }}>Achats</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{purchases.length}</div>
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Achats</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{purchases.length}</div>
             </div>
           </div>
 
           {/* Transaction list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {purchases.map((p, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#f8fafc", borderRadius: 12, padding: "9px 12px" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "12px 14px" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.itemName}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.itemName}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
                     <TypeBadge type={p.itemType} />
-                    <span style={{ fontSize: 9.5, color: P.soft }}>{fmtDate(p.date)}</span>
+                    <span style={{ fontSize: 12, color: P.soft }}>{fmtDate(p.date)}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: P.text }}>{fmt(p.price * p.quantity)}</div>
-                  {p.quantity > 1 && <div style={{ fontSize: 9, color: P.soft }}>{fmt(p.price)} × {p.quantity}</div>}
+                  <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{fmt(p.price * p.quantity)}</div>
+                  {p.quantity > 1 && <div style={{ fontSize: 11, color: P.soft }}>{fmt(p.price)} × {p.quantity}</div>}
                 </div>
               </div>
             ))}
@@ -1080,23 +1080,23 @@ function SpotsTab({ spots, setSpots, items }) {
 
   return (
     <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {sorted.map((sp) => {
           const t = SPOT_TYPES[sp.type];
           const count = purchaseCounts[sp.id] || 0;
           return (
             <Card key={sp.id} onClick={() => setSelectedSpot(sp)}>
-              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
-                    {count > 0 && <span style={{ fontSize: 9, fontWeight: 600, background: "#f1f5f9", color: P.a1, padding: "1.5px 6px", borderRadius: 6 }}>{count} achat{count > 1 ? "s" : ""}</span>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, background: t.bg, color: t.color, padding: "4px 10px", borderRadius: 8 }}>{t.icon} {t.label}</span>
+                    {count > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: "#f1f5f9", color: P.a1, padding: "3px 8px", borderRadius: 6 }}>{count} achat{count > 1 ? "s" : ""}</span>}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: P.text }}>{sp.name}</div>
-                  <div style={{ marginTop: 3 }}><Stars rating={sp.rating} /></div>
-                  {sp.note && <div style={{ fontSize: 10.5, color: P.soft, marginTop: 5, lineHeight: 1.5 }}>{sp.note}</div>}
+                  <div style={{ fontSize: 16, fontWeight: 600, color: P.text }}>{sp.name}</div>
+                  <div style={{ marginTop: 5 }}><Stars rating={sp.rating} /></div>
+                  {sp.note && <div style={{ fontSize: 13, color: P.soft, marginTop: 6, lineHeight: 1.5 }}>{sp.note}</div>}
                 </div>
-                <div style={{ color: P.soft, fontSize: 16, flexShrink: 0 }}>›</div>
+                <div style={{ color: P.soft, fontSize: 20, flexShrink: 0 }}>›</div>
               </div>
             </Card>
           );
@@ -1133,30 +1133,30 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
   const submit = () => { if (!form.title || !form.url) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
   return (
     <BottomModal onClose={onClose}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvelle"} ressource</div>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: P.soft, cursor: "pointer" }}>✕</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvelle"} ressource</div>
+        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
       </div>
       <Input label="Titre" type="text" placeholder="Ex: Guide investissement Pokémon cards" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
       <Input label="URL" type="text" placeholder="https://..." value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
-        <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
+        <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
           {Object.entries(RESOURCE_TYPES).map(([k, v]) => (
             <button key={k} onClick={() => setForm({ ...form, type: k })}
-              style={{ flex: "1 1 calc(50% - 3px)", padding: "6px 4px", borderRadius: 10, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ flex: "1 1 calc(50% - 4px)", padding: "10px 6px", borderRadius: 12, border: form.type === k ? `2px solid ${v.color}` : "2px solid #e2e8f0", background: form.type === k ? v.bg : "#f8fafc", color: form.type === k ? v.color : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
               {v.icon} {v.label}
             </button>
           ))}
         </div>
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note (optionnel)</label>
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note (optionnel)</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions, points clés..." rows={3}
-          style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none" }}
+          style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
           onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
-      <button onClick={submit} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
+      <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
   );
 }
@@ -1184,38 +1184,38 @@ function ResourcesTab({ resources, setResources }) {
   return (
     <div>
       {/* Filter pills */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
         <button onClick={() => setFilter("all")}
-          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: filter === "all" ? P.a1 : "#f1f5f9", color: filter === "all" ? "#fff" : P.soft, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+          style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === "all" ? P.a1 : "#f1f5f9", color: filter === "all" ? "#fff" : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
           Tous {resources.length > 0 && `(${resources.length})`}
         </button>
         {Object.entries(RESOURCE_TYPES).map(([k, v]) => counts[k] ? (
           <button key={k} onClick={() => setFilter(k)}
-            style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+            style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
             {v.icon} {v.label} ({counts[k]})
           </button>
         ) : null)}
       </div>
 
       {/* Resource cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {filtered.map((r) => {
           const t = RESOURCE_TYPES[r.type] || RESOURCE_TYPES.other;
           return (
             <Card key={r.id} onClick={() => openUrl(r.url)}>
-              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, background: t.bg, color: t.color, padding: "1.5px 7px", borderRadius: 6 }}>{t.icon} {t.label}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, background: t.bg, color: t.color, padding: "4px 10px", borderRadius: 8 }}>{t.icon} {t.label}</span>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: P.text, lineHeight: 1.3 }}>{r.title}</div>
-                  <div style={{ fontSize: 10, color: P.a1, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.url}</div>
-                  {r.note && <div style={{ fontSize: 10.5, color: P.soft, marginTop: 5, lineHeight: 1.5 }}>{r.note}</div>}
+                  <div style={{ fontSize: 16, fontWeight: 600, color: P.text, lineHeight: 1.3 }}>{r.title}</div>
+                  <div style={{ fontSize: 12, color: P.a1, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.url}</div>
+                  {r.note && <div style={{ fontSize: 13, color: P.soft, marginTop: 6, lineHeight: 1.5 }}>{r.note}</div>}
                 </div>
                 {/* Actions — stop propagation so they don't trigger the card's openUrl */}
-                <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setEditRes(r)} style={{ background: "none", border: "none", fontSize: 14, color: P.soft, cursor: "pointer" }}>✎</button>
-                  <button onClick={() => del(r.id)} style={{ background: "none", border: "none", fontSize: 14, color: P.soft, cursor: "pointer" }}
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => setEditRes(r)} style={{ background: "none", border: "none", fontSize: 16, color: P.soft, cursor: "pointer" }}>✎</button>
+                  <button onClick={() => del(r.id)} style={{ background: "none", border: "none", fontSize: 16, color: P.soft, cursor: "pointer" }}
                     onMouseEnter={(e) => (e.target.style.color = "#dc2626")} onMouseLeave={(e) => (e.target.style.color = P.soft)}>×</button>
                 </div>
               </div>
@@ -1223,10 +1223,10 @@ function ResourcesTab({ resources, setResources }) {
           );
         })}
         {filtered.length === 0 && (
-          <div style={{ background: "#f8fafc", borderRadius: 18, padding: "28px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📚</div>
-            <div style={{ fontSize: 13, color: P.soft, fontWeight: 500 }}>{filter === "all" ? "Aucune ressource" : `Aucune ressource de type "${RESOURCE_TYPES[filter]?.label}"`}</div>
-            <div style={{ fontSize: 10.5, color: P.soft, marginTop: 4, opacity: 0.7 }}>Ajoute des liens utiles ci-dessous</div>
+          <div style={{ background: "#f8fafc", borderRadius: 18, padding: "32px 22px", textAlign: "center" }}>
+            <div style={{ fontSize: 38, marginBottom: 10 }}>📚</div>
+            <div style={{ fontSize: 15, color: P.soft, fontWeight: 500 }}>{filter === "all" ? "Aucune ressource" : `Aucune ressource de type "${RESOURCE_TYPES[filter]?.label}"`}</div>
+            <div style={{ fontSize: 13, color: P.soft, marginTop: 5, opacity: 0.7 }}>Ajoute des liens utiles ci-dessous</div>
           </div>
         )}
       </div>
@@ -1284,12 +1284,12 @@ export default function App() {
       <Blob style={{ bottom: 100, left: -100, width: 260, height: 260, background: "#cbd5e1" }} />
 
       {/* Logo — top right, discreet */}
-      <div style={{ position: "relative", zIndex: 1, padding: "20px 22px 12px", flexShrink: 0, textAlign: "right" }}>
-        <span style={{ fontSize: 17, fontWeight: 700, color: P.text, letterSpacing: "-0.5px" }}>Hexuo</span>
+      <div style={{ position: "relative", zIndex: 1, padding: "22px 24px 14px", flexShrink: 0, textAlign: "right" }}>
+        <span style={{ fontSize: 20, fontWeight: 700, color: P.text, letterSpacing: "-0.5px" }}>Hexuo</span>
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 20px 100px" }}>
+      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 22px 120px" }}>
         {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
         {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
         {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
@@ -1297,11 +1297,11 @@ export default function App() {
       </div>
 
       {/* Bottom tab bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", gap: 4, padding: "10px 16px 28px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", gap: 6, padding: "12px 18px 32px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0" }}>
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", background: tab === t.id ? "#1e293b" : "transparent", color: tab === t.id ? "#fff" : P.soft, fontSize: 9.5, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 18 }}>{t.icon}</span>
+            style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "none", background: tab === t.id ? "#1e293b" : "transparent", color: tab === t.id ? "#fff" : P.soft, fontSize: 12, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 22 }}>{t.icon}</span>
             {t.label}
           </button>
         ))}
