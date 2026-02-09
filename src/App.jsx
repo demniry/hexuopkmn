@@ -1289,12 +1289,23 @@ function CalendarTab({ events, setEvents }) {
 
   return (
     <div>
-      {/* View toggle */}
-      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 14, padding: 4, marginBottom: 20 }}>
-        {[{ id: "list", label: "Liste", icon: "☰" }, { id: "grid", label: "Calendrier", icon: "⊞" }].map((v) => (
+      {/* View toggle - Retro style */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 20, border: `3px solid ${P.border}` }}>
+        {[{ id: "list", label: "LISTE" }, { id: "grid", label: "CALENDRIER" }].map((v, idx) => (
           <button key={v.id} onClick={() => setView(v.id)}
-            style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "none", background: view === v.id ? "#fff" : "transparent", color: view === v.id ? P.text : P.soft, fontSize: 14, fontWeight: view === v.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", boxShadow: view === v.id ? "0 1px 6px rgba(100,80,140,0.12)" : "none" }}>
-            {v.icon} {v.label}
+            style={{
+              flex: 1,
+              padding: "12px 8px",
+              border: "none",
+              borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
+              background: view === v.id ? P.yellow : P.card,
+              color: P.text,
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 1,
+            }}>
+            {view === v.id && "* "}{v.label}{view === v.id && " *"}
           </button>
         ))}
       </div>
@@ -1585,16 +1596,36 @@ function ResourcesTab({ resources, setResources }) {
 
   return (
     <div>
-      {/* Filter pills */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+      {/* Filter pills - Retro style */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
         <button onClick={() => setFilter("all")}
-          style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === "all" ? P.a1 : "#f1f5f9", color: filter === "all" ? "#fff" : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-          Tous {resources.length > 0 && `(${resources.length})`}
+          style={{
+            padding: "8px 12px",
+            border: `3px solid ${P.border}`,
+            background: filter === "all" ? P.red : P.card,
+            color: filter === "all" ? "#fff" : P.text,
+            fontSize: 8,
+            fontFamily: PIXEL_FONT,
+            cursor: "pointer",
+            letterSpacing: 0.5,
+            boxShadow: filter === "all" ? "none" : "2px 2px 0 rgba(0,0,0,0.2)",
+          }}>
+          TOUS {resources.length > 0 && `(${resources.length})`}
         </button>
         {Object.entries(RESOURCE_TYPES).map(([k, v]) => counts[k] ? (
           <button key={k} onClick={() => setFilter(k)}
-            style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-            {v.icon} {v.label} ({counts[k]})
+            style={{
+              padding: "8px 12px",
+              border: `3px solid ${P.border}`,
+              background: filter === k ? v.color : P.card,
+              color: filter === k ? "#fff" : P.text,
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 0.5,
+              boxShadow: filter === k ? "none" : "2px 2px 0 rgba(0,0,0,0.2)",
+            }}>
+            {v.label.toUpperCase()} ({counts[k]})
           </button>
         ) : null)}
       </div>
