@@ -2,16 +2,68 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./supabase";
 
 // ═══════════════════════════════════════════════════════════
-// PALETTE & SHARED UTILS
+// POKÉMON 1G RETRO PALETTE & PIXEL ART THEME
 // ═══════════════════════════════════════════════════════════
 const P = {
-  bg: "#f8fafc", card: "#fff", shadow: "0 2px 16px rgba(15,23,42,0.06)",
-  a1: "#475569", a2: "#b45309", a3: "#047857", a4: "#16a34a",
-  text: "#1e293b", soft: "#64748b",
-  accent: "#1e40af",
-  danger: "#dc2626",
-  sidebar: "#1e293b",
+  // Main colors - Game Boy inspired
+  bg: "#f0e6c8",           // Parchment/cream background
+  card: "#fffef5",         // Light cream cards
+  shadow: "none",          // Pixel art = no soft shadows
+
+  // Pokemon colors
+  red: "#e53935",          // Pokemon Red
+  blue: "#1e88e5",         // Pokemon Blue
+  yellow: "#fdd835",       // Pikachu yellow
+  green: "#43a047",        // Pokemon Leaf Green
+
+  // UI colors
+  text: "#2d3436",         // Dark text
+  soft: "#636e72",         // Muted text
+  accent: "#e53935",       // Red accent (Pokemon Red)
+  danger: "#c62828",
+
+  // Retro specific
+  border: "#2d3436",       // Dark pixel borders
+  borderLight: "#b2bec3",  // Light borders
+  wood: "#8d6e63",         // Shelf wood color
+  woodDark: "#5d4037",     // Shelf shadow
+  woodLight: "#a1887f",    // Shelf highlight
 };
+
+// Pixel font family
+const PIXEL_FONT = "'Press Start 2P', monospace";
+const BODY_FONT = "'VT323', monospace";
+
+// Pixel border style (Game Boy menu look)
+const pixelBorder = (color = P.border, width = 3) => ({
+  border: `${width}px solid ${color}`,
+  boxShadow: `
+    ${width}px 0 0 0 ${color},
+    -${width}px 0 0 0 ${color},
+    0 ${width}px 0 0 ${color},
+    0 -${width}px 0 0 ${color},
+    ${width}px ${width}px 0 0 ${color},
+    -${width}px ${width}px 0 0 ${color},
+    ${width}px -${width}px 0 0 ${color},
+    -${width}px -${width}px 0 0 ${color}
+  `,
+});
+
+// Retro button style
+const retroButtonStyle = (isActive = false, color = P.red) => ({
+  padding: "10px 16px",
+  border: `3px solid ${P.border}`,
+  borderRadius: 0,
+  background: isActive ? color : P.card,
+  color: isActive ? "#fff" : P.text,
+  fontSize: 12,
+  fontFamily: PIXEL_FONT,
+  cursor: "pointer",
+  textTransform: "uppercase",
+  letterSpacing: 1,
+  transition: "none",
+  boxShadow: isActive ? "inset 2px 2px 0 rgba(0,0,0,0.2)" : "3px 3px 0 rgba(0,0,0,0.3)",
+});
 
 // ═══════════════════════════════════════════════════════════
 // RESPONSIVE HOOK
@@ -53,19 +105,64 @@ const INIT = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// SHARED COMPONENTS
+// SHARED COMPONENTS - RETRO PIXEL STYLE
 // ═══════════════════════════════════════════════════════════
-function Blob({ style }) {
-  return <div style={{ position: "absolute", borderRadius: "50%", filter: "blur(100px)", opacity: 0.15, pointerEvents: "none", ...style }} />;
+
+// Pokeball decoration
+function Pokeball({ size = 24, style: extra }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={extra}>
+      <circle cx="50" cy="50" r="48" fill="#fff" stroke={P.border} strokeWidth="4"/>
+      <path d="M 2 50 H 98" stroke={P.border} strokeWidth="4"/>
+      <circle cx="50" cy="50" r="16" fill="#fff" stroke={P.border} strokeWidth="4"/>
+      <circle cx="50" cy="50" r="8" fill={P.border}/>
+      <path d="M 2 50 A 48 48 0 0 0 98 50" fill={P.red}/>
+    </svg>
+  );
+}
+
+// Pixel sparkle animation
+function PixelSparkle({ style }) {
+  return (
+    <div style={{
+      position: "absolute",
+      width: 8,
+      height: 8,
+      background: P.yellow,
+      animation: "sparkle 0.6s ease-in-out infinite",
+      ...style
+    }} />
+  );
 }
 
 function Input({ label, type, placeholder, value, onChange, style: extraStyle }) {
   return (
     <div style={{ marginBottom: 14, ...extraStyle }}>
-      <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginBottom: 6, display: "block" }}>{label}</label>
+      <label style={{
+        fontSize: 10,
+        color: P.text,
+        fontFamily: PIXEL_FONT,
+        letterSpacing: 0.5,
+        marginBottom: 8,
+        display: "block",
+        textTransform: "uppercase"
+      }}>{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={onChange}
-        style={{ display: "block", width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text }}
-        onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+        style={{
+          display: "block",
+          width: "100%",
+          padding: "12px 14px",
+          border: `3px solid ${P.border}`,
+          borderRadius: 0,
+          fontSize: 18,
+          fontFamily: BODY_FONT,
+          outline: "none",
+          boxSizing: "border-box",
+          background: P.card,
+          color: P.text
+        }}
+        onFocus={(e) => (e.target.style.borderColor = P.red)}
+        onBlur={(e) => (e.target.style.borderColor = P.border)}
       />
     </div>
   );
@@ -74,9 +171,21 @@ function Input({ label, type, placeholder, value, onChange, style: extraStyle })
 function AddButton({ onClick }) {
   return (
     <button onClick={onClick}
-      style={{ width: "100%", padding: "18px", border: "2px dashed #cbd5e1", borderRadius: 12, background: "transparent", color: P.soft, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s, color 0.2s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.a1; e.currentTarget.style.color = P.a1; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.color = P.soft; }}
+      style={{
+        width: "100%",
+        padding: "16px",
+        border: `3px dashed ${P.border}`,
+        borderRadius: 0,
+        background: "transparent",
+        color: P.text,
+        fontSize: 10,
+        fontFamily: PIXEL_FONT,
+        cursor: "pointer",
+        textTransform: "uppercase",
+        letterSpacing: 1,
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.red; e.currentTarget.style.color = P.red; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.text; }}
     >+ Ajouter</button>
   );
 }
@@ -84,9 +193,17 @@ function AddButton({ onClick }) {
 function Card({ children, onClick, style: extra }) {
   return (
     <div onClick={onClick}
-      style={{ background: P.card, borderRadius: 14, padding: "18px 20px", boxShadow: P.shadow, border: "1px solid #e2e8f0", cursor: onClick ? "pointer" : "default", transition: "transform 0.2s, box-shadow 0.2s", ...extra }}
-      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(15,23,42,0.1)"; }}}
-      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = P.shadow; }}}
+      style={{
+        background: P.card,
+        border: `3px solid ${P.border}`,
+        borderRadius: 0,
+        padding: "16px 18px",
+        cursor: onClick ? "pointer" : "default",
+        boxShadow: "4px 4px 0 rgba(0,0,0,0.2)",
+        ...extra
+      }}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translate(-2px, -2px)"; e.currentTarget.style.boxShadow = "6px 6px 0 rgba(0,0,0,0.25)"; }}}
+      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translate(0, 0)"; e.currentTarget.style.boxShadow = "4px 4px 0 rgba(0,0,0,0.2)"; }}}
     >{children}</div>
   );
 }
@@ -98,30 +215,34 @@ function Modal({ onClose, children, title }) {
     <div
       style={{
         position: "fixed", inset: 0,
-        background: "rgba(15,23,42,0.5)",
-        backdropFilter: "blur(4px)",
+        background: "rgba(0,0,0,0.7)",
         zIndex: 100,
         display: "flex",
         alignItems: isDesktop ? "center" : "flex-end",
         justifyContent: "center",
         padding: isDesktop ? 20 : 0,
+        imageRendering: "pixelated",
       }}
       onClick={onClose}
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: isDesktop ? 16 : "20px 20px 0 0",
+          background: P.card,
+          border: `4px solid ${P.border}`,
+          borderRadius: 0,
           width: "100%",
           maxWidth: isDesktop ? 520 : 560,
           maxHeight: isDesktop ? "85vh" : "90vh",
           overflowY: "auto",
-          padding: isDesktop ? "28px 32px" : "24px 24px 100px",
-          boxShadow: isDesktop ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
+          padding: isDesktop ? "24px 28px" : "20px 20px 100px",
+          boxShadow: "8px 8px 0 rgba(0,0,0,0.3)",
+          position: "relative",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {!isDesktop && <div style={{ width: 40, height: 5, borderRadius: 3, background: "#e2e8f0", margin: "0 auto 20px" }} />}
+        {/* Decorative corner pixels */}
+        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.red }} />
+        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.blue }} />
         {children}
       </div>
     </div>
@@ -131,11 +252,13 @@ function Modal({ onClose, children, title }) {
 // Alias for backward compatibility
 const BottomModal = Modal;
 
-// Stars rating display
+// Stars rating display - Pixel style
 function Stars({ rating, max = 5 }) {
   return (
-    <span style={{ fontSize: 16, letterSpacing: 2 }}>
-      {"★".repeat(rating)}<span style={{ color: "#e2e8f0" }}>{"★".repeat(max - rating)}</span>
+    <span style={{ fontSize: 14, letterSpacing: 4, fontFamily: PIXEL_FONT }}>
+      {Array(max).fill(0).map((_, i) => (
+        <span key={i} style={{ color: i < rating ? P.yellow : P.borderLight }}>*</span>
+      ))}
     </span>
   );
 }
@@ -182,20 +305,32 @@ const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((i
 
 function TypeBadge({ type }) {
   const map = {
-    "Ultra Premium Collection": { bg: "#fef3c7", text: "#92400e" },
-    "Bundle": { bg: "#e0f2fe", text: "#0369a1" },
-    "Elite Trainer Box": { bg: "#fee2e2", text: "#991b1b" },
-    "Collection Box": { bg: "#d1fae5", text: "#065f46" }
+    "Ultra Premium Collection": { bg: P.yellow, text: P.border, icon: "UPC" },
+    "Bundle": { bg: P.blue, text: "#fff", icon: "BDL" },
+    "Elite Trainer Box": { bg: P.red, text: "#fff", icon: "ETB" },
+    "Collection Box": { bg: P.green, text: "#fff", icon: "BOX" }
   };
-  const c = map[type] || { bg: "#f1f5f9", text: "#475569" };
-  return <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", background: c.bg, color: c.text, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{type}</span>;
+  const c = map[type] || { bg: P.borderLight, text: P.text, icon: "???" };
+  return (
+    <span style={{
+      fontSize: 8,
+      fontFamily: PIXEL_FONT,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      background: c.bg,
+      color: c.text,
+      padding: "6px 10px",
+      border: `2px solid ${P.border}`,
+      display: "inline-block"
+    }}>{c.icon}</span>
+  );
 }
 
 function MiniBar({ value, max, color }) {
   const w = Math.max((value / max) * 100, 6);
   return (
-    <div style={{ width: "100%", height: 6, borderRadius: 3, background: "#e2e8f0", overflow: "hidden" }}>
-      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
+    <div style={{ width: "100%", height: 10, border: `2px solid ${P.border}`, background: P.card }}>
+      <div style={{ width: `${w}%`, height: "100%", background: color }} />
     </div>
   );
 }
@@ -203,22 +338,34 @@ function MiniBar({ value, max, color }) {
 function DonutChart({ items }) {
   const total = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
   if (total === 0) return null;
-  const colors = ["#475569", "#0369a1", "#047857", "#b45309", "#7c3aed", "#be185d", "#0891b2", "#4f46e5"];
-  let cumul = 0;
-  const segments = items.map((item, idx) => { const val = (item.currentPrice * totalQty(item)) / total; const start = cumul; cumul += val; return { item, val, start, color: colors[idx % colors.length] }; });
-  const size = 130, cx = size / 2, cy = size / 2, r = 50;
-  const arc = (s, e) => { const a1 = s * 2 * Math.PI - Math.PI / 2, a2 = e * 2 * Math.PI - Math.PI / 2; return `M ${cx} ${cy} L ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${e - s > 0.5 ? 1 : 0} 1 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)} Z`; };
+  const colors = [P.red, P.blue, P.green, P.yellow, "#9c27b0", "#e91e63", "#00bcd4", "#ff5722"];
+
+  // Pixel-style bar chart instead of donut
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-        {segments.map((seg, i) => <path key={i} d={arc(seg.start, seg.start + seg.val)} fill={seg.color} stroke="#fff" strokeWidth="2" />)}
-        <circle cx={cx} cy={cy} r={24} fill="#fff" />
-        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="14" fontWeight="700" fill={P.text}>{items.length}</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fontSize="9" fill={P.soft}>items</text>
-      </svg>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-        {items.map((item, idx) => <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 12, height: 12, borderRadius: 3, background: colors[idx % colors.length], flexShrink: 0 }} /><span style={{ fontSize: 13, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span><span style={{ fontSize: 13, fontWeight: 600, color: P.soft }}>{((item.currentPrice * totalQty(item)) / total * 100).toFixed(1)}%</span></div>)}
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Pokeball counter */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+        <Pokeball size={40} />
+        <div>
+          <div style={{ fontSize: 10, fontFamily: PIXEL_FONT, color: P.text }}>{items.length} ITEMS</div>
+          <div style={{ fontSize: 20, fontFamily: BODY_FONT, color: P.text, fontWeight: 700 }}>{fmt(total)}</div>
+        </div>
       </div>
+
+      {/* Pixel bar chart */}
+      {items.slice(0, 5).map((item, idx) => {
+        const pct = (item.currentPrice * totalQty(item)) / total * 100;
+        return (
+          <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 12, height: 12, background: colors[idx % colors.length], border: `2px solid ${P.border}`, flexShrink: 0 }} />
+            <span style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
+            <span style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: P.soft }}>{pct.toFixed(0)}%</span>
+          </div>
+        );
+      })}
+      {items.length > 5 && (
+        <div style={{ fontSize: 10, fontFamily: PIXEL_FONT, color: P.soft, textAlign: "center" }}>+{items.length - 5} AUTRES</div>
+      )}
     </div>
   );
 }
@@ -439,9 +586,126 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// PIXEL ART SHELF COMPONENT
+// ═══════════════════════════════════════════════════════════
+function PixelBooster({ type, name, onClick }) {
+  // Different colors for different types
+  const colors = {
+    "Ultra Premium Collection": { main: P.yellow, accent: P.border, label: "UPC" },
+    "Bundle": { main: P.blue, accent: "#fff", label: "BDL" },
+    "Elite Trainer Box": { main: P.red, accent: "#fff", label: "ETB" },
+    "Collection Box": { main: P.green, accent: "#fff", label: "BOX" },
+  };
+  const c = colors[type] || { main: P.borderLight, accent: P.text, label: "???" };
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: 50,
+        height: 70,
+        background: c.main,
+        border: `3px solid ${P.border}`,
+        position: "relative",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "2px 2px 0 rgba(0,0,0,0.2)",
+      }}
+    >
+      {/* Pokeball icon */}
+      <div style={{
+        width: 20,
+        height: 20,
+        borderRadius: "50%",
+        background: "#fff",
+        border: `2px solid ${P.border}`,
+        marginBottom: 4,
+      }}>
+        <div style={{ width: "100%", height: "50%", background: c.main, borderRadius: "10px 10px 0 0" }} />
+      </div>
+      {/* Type label */}
+      <div style={{
+        fontSize: 6,
+        fontFamily: PIXEL_FONT,
+        color: c.accent,
+        textAlign: "center",
+        letterSpacing: 0.5,
+      }}>{c.label}</div>
+    </div>
+  );
+}
+
+function PixelShelf({ items, onItemClick }) {
+  // Group items into shelves of 5
+  const itemsPerShelf = 5;
+  const shelves = [];
+  for (let i = 0; i < items.length; i += itemsPerShelf) {
+    shelves.push(items.slice(i, i + itemsPerShelf));
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div style={{
+      background: P.card,
+      border: `4px solid ${P.border}`,
+      padding: 16,
+      marginBottom: 20,
+      boxShadow: "6px 6px 0 rgba(0,0,0,0.2)",
+    }}>
+      <div style={{
+        fontSize: 10,
+        fontFamily: PIXEL_FONT,
+        color: P.text,
+        marginBottom: 16,
+        letterSpacing: 1,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}>
+        <span style={{ color: P.red }}>*</span> MA COLLECTION <span style={{ color: P.blue }}>*</span>
+      </div>
+
+      {shelves.map((shelfItems, shelfIdx) => (
+        <div key={shelfIdx} style={{ marginBottom: shelfIdx < shelves.length - 1 ? 8 : 0 }}>
+          {/* Items on shelf */}
+          <div style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            gap: 8,
+            paddingBottom: 8,
+          }}>
+            {shelfItems.map((item) => (
+              <PixelBooster
+                key={item.id}
+                type={item.type}
+                name={item.name}
+                onClick={() => onItemClick(item.id)}
+              />
+            ))}
+          </div>
+          {/* Wooden shelf */}
+          <div style={{
+            height: 12,
+            background: `linear-gradient(180deg, ${P.wood} 0%, ${P.woodDark} 50%, ${P.wood} 100%)`,
+            border: `3px solid ${P.border}`,
+            borderTop: "none",
+            boxShadow: "inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 0 rgba(0,0,0,0.2)",
+          }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [viewMode, setViewMode] = useState("shelf"); // "shelf" | "list"
   const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
   const isDesktop = useIsDesktop();
@@ -501,184 +765,177 @@ function WalletTab({ items, setItems, events }) {
 
   return (
     <div>
-      {/* Desktop: Dashboard grid layout */}
-      {isDesktop ? (
-        <div style={{ display: "grid", gridTemplateColumns: isWide ? "1fr 1fr" : "1fr", gap: 24, marginBottom: 24 }}>
-          {/* Left: Overview */}
-          <div>
-            {/* Overview card */}
-            <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "28px", color: "#fff", boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 6 }}>VALEUR TOTALE</div>
-                <div style={{ fontSize: 42, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
-                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 14, fontSize: 15, fontWeight: 500 }}>
-                  <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "8px 14px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-                  <span style={{ opacity: 0.5, fontSize: 14 }}>{fmt(totalBuy)} investis</span>
-                </div>
-              </div>
-            </div>
+      {/* RETRO OVERVIEW CARD - Game Boy style */}
+      <div style={{
+        background: P.blue,
+        border: `4px solid ${P.border}`,
+        padding: "20px",
+        color: "#fff",
+        marginBottom: 20,
+        boxShadow: "6px 6px 0 rgba(0,0,0,0.25)",
+        position: "relative",
+      }}>
+        {/* Corner decorations */}
+        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.yellow }} />
+        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.yellow }} />
+
+        <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>VALEUR TOTALE</div>
+        <div style={{ fontSize: 32, fontFamily: BODY_FONT, fontWeight: 700 }}>{fmt(totalCur)}</div>
+        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{
+            background: totalRealPnL >= 0 ? P.green : P.red,
+            color: "#fff",
+            padding: "8px 12px",
+            border: `2px solid ${P.border}`,
+            fontSize: 16,
+            fontFamily: BODY_FONT,
+            fontWeight: 700,
+          }}>
+            {totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)
+          </span>
+          <span style={{ fontSize: 16, fontFamily: BODY_FONT, opacity: 0.8 }}>{fmt(totalBuy)} investis</span>
+        </div>
+      </div>
+
+      {/* Stats row - Retro boxes */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {[
+          { label: "ITEMS", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text, bg: P.card },
+          { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.green },
+          { label: "PERTE", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#fff", bg: P.red },
+        ].map((s) => (
+          <div key={s.label} style={{
+            background: s.bg,
+            border: `3px solid ${P.border}`,
+            padding: "14px 10px",
+            textAlign: "center",
+            boxShadow: "3px 3px 0 rgba(0,0,0,0.2)",
+          }}>
+            <div style={{ fontSize: 28, fontFamily: BODY_FONT, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: s.color, letterSpacing: 0.5, marginTop: 4, opacity: 0.8 }}>{s.label}</div>
           </div>
+        ))}
+      </div>
 
-          {/* Right: Stats + Advanced */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Stats row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              {[
-                { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
-                { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
-                { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
-              ].map((s) => (
-                <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "16px 12px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 12, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Advanced stats */}
-            {items.length > 0 && (
-              <Card style={{ padding: "18px 20px", flex: 1 }}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-                  {bestItem && getItemPnLPct(bestItem) > 0 && (
-                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
-                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
-                    </div>
-                  )}
-                  {worstItem && getItemPnLPct(worstItem) < 0 && (
-                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
-                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
-                    </div>
-                  )}
-                  {hasAnySales && (
-                    <div style={{ flex: "1 1 30%", minWidth: 140 }}>
-                      <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
-                    </div>
-                  )}
-                </div>
-              </Card>
+      {/* Advanced stats - Retro card */}
+      {items.length > 0 && (
+        <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
+          <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 14, letterSpacing: 1 }}>STATISTIQUES</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            {bestItem && getItemPnLPct(bestItem) > 0 && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>MEILLEUR</div>
+                <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
+                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.green }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+              </div>
+            )}
+            {worstItem && getItemPnLPct(worstItem) < 0 && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>PIRE</div>
+                <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
+                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.red }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+              </div>
+            )}
+            {hasAnySales && (
+              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>P&L REALISE</div>
+                <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: realizedPnL >= 0 ? P.green : P.red }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+              </div>
             )}
           </div>
-        </div>
-      ) : (
-        <>
-          {/* Mobile: Original stacked layout */}
-          {/* Overview card */}
-          <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", borderRadius: 16, padding: "26px 24px 22px", color: "#fff", marginBottom: 20, boxShadow: "0 4px 24px rgba(15,23,42,0.25)", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)", pointerEvents: "none" }} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: 1.2, opacity: 0.6, marginBottom: 4 }}>VALEUR TOTALE</div>
-              <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1 }}>{fmt(totalCur)}</div>
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, fontSize: 14, fontWeight: 500 }}>
-                <span style={{ background: totalRealPnL >= 0 ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)", color: totalRealPnL >= 0 ? "#4ade80" : "#fca5a5", padding: "6px 12px", borderRadius: 8 }}>{totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)</span>
-                <span style={{ opacity: 0.5, fontSize: 13 }}>{fmt(totalBuy)} investis</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-            {[
-              { label: "Items", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text },
-              { label: "En profit", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#16a34a" },
-              { label: "En perte", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#dc2626" },
-            ].map((s) => (
-              <div key={s.label} style={{ background: P.card, borderRadius: 12, padding: "14px 10px", boxShadow: P.shadow, border: "1px solid #e2e8f0", textAlign: "center" }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, marginTop: 4 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Advanced stats */}
-          {items.length > 0 && (
-            <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-                {bestItem && getItemPnLPct(bestItem) > 0 && (
-                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Meilleur investissement</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#16a34a" }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
-                  </div>
-                )}
-                {worstItem && getItemPnLPct(worstItem) < 0 && (
-                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>Pire investissement</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#dc2626" }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
-                  </div>
-                )}
-                {hasAnySales && (
-                  <div style={{ flex: "1 1 45%", minWidth: 130 }}>
-                    <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>P&L réalisé</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: realizedPnL >= 0 ? "#16a34a" : "#dc2626" }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
-        </>
+        </Card>
       )}
 
-      {/* Section title on desktop */}
-      {isDesktop && items.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, color: P.text, margin: 0 }}>Mon Portfolio</h2>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: P.accent, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-          >
-            + Ajouter
-          </button>
+      {/* VIEW MODE TOGGLE */}
+      {items.length > 0 && (
+        <div style={{ display: "flex", gap: 0, marginBottom: 16, border: `3px solid ${P.border}` }}>
+          {[
+            { id: "shelf", label: "ETAGERE" },
+            { id: "list", label: "LISTE" },
+          ].map((v, idx) => (
+            <button
+              key={v.id}
+              onClick={() => setViewMode(v.id)}
+              style={{
+                flex: 1,
+                padding: "10px",
+                border: "none",
+                borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
+                background: viewMode === v.id ? P.yellow : P.card,
+                color: P.text,
+                fontSize: 8,
+                fontFamily: PIXEL_FONT,
+                cursor: "pointer",
+                letterSpacing: 1,
+              }}
+            >
+              {viewMode === v.id && "* "}{v.label}{viewMode === v.id && " *"}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Items - Grid on desktop, list on mobile */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isWide ? "repeat(3, 1fr)" : isDesktop ? "repeat(2, 1fr)" : "1fr",
-        gap: isDesktop ? 16 : 12,
-        marginBottom: 18
-      }}>
-        {items.map((item) => {
-          const realPnL = getItemPnL(item);
-          const realPnLPct = getItemPnLPct(item);
-          const isUp = realPnL >= 0;
-          const hasSales = item.sold && item.sold.length > 0;
-          const soldQty = hasSales ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
-          const remainingQty = totalQty(item) - soldQty;
-          const isFullySold = remainingQty === 0;
-          return (
-            <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
-              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{item.name}</div>
-                  <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                    <TypeBadge type={item.type} />
-                    {hasSales && (
-                      <span style={{ fontSize: 11, fontWeight: 600, background: isFullySold ? "#d1fae5" : "#fef3c7", color: isFullySold ? "#065f46" : "#92400e", padding: "3px 8px", borderRadius: 6 }}>
-                        {isFullySold ? "Vendu" : `${soldQty}/${totalQty(item)} vendu`}
-                      </span>
-                    )}
+      {/* SHELF VIEW */}
+      {viewMode === "shelf" && (
+        <PixelShelf items={items} onItemClick={setSelectedId} />
+      )}
+
+      {/* LIST VIEW - Items */}
+      {viewMode === "list" && (
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          marginBottom: 18
+        }}>
+          {items.map((item) => {
+            const realPnL = getItemPnL(item);
+            const realPnLPct = getItemPnLPct(item);
+            const isUp = realPnL >= 0;
+            const hasSales = item.sold && item.sold.length > 0;
+            const soldQty = hasSales ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
+            const remainingQty = totalQty(item) - soldQty;
+            const isFullySold = remainingQty === 0;
+            return (
+              <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 600, marginBottom: 6 }}>{item.name}</div>
+                    <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <TypeBadge type={item.type} />
+                      {hasSales && (
+                        <span style={{
+                          fontSize: 8,
+                          fontFamily: PIXEL_FONT,
+                          background: isFullySold ? P.green : P.yellow,
+                          color: isFullySold ? "#fff" : P.text,
+                          padding: "4px 8px",
+                          border: `2px solid ${P.border}`,
+                        }}>
+                          {isFullySold ? "VENDU" : `${soldQty}/${totalQty(item)}`}
+                        </span>
+                      )}
+                    </div>
+                    <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.green : P.red} />
+                    <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft, marginTop: 6 }}>{totalQty(item)} unite{totalQty(item) > 1 ? "s" : ""} - moy. {fmt(avgPrice(item))}</div>
                   </div>
-                  <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.a4 : P.a2} />
-                  <div style={{ fontSize: 12, color: P.soft, marginTop: 6 }}>{totalQty(item)} unité{totalQty(item) > 1 ? "s" : ""} · {item.transactions.length} achat{item.transactions.length > 1 ? "s" : ""} · moy. {fmt(avgPrice(item))}</div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700 }}>{hasSales && isFullySold ? fmt(realPnL + totalCost(item)) : fmt(item.currentPrice)}</div>
+                    <div style={{
+                      fontSize: 16,
+                      fontFamily: BODY_FONT,
+                      fontWeight: 700,
+                      color: isUp ? P.green : P.red,
+                      marginTop: 4
+                    }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
+                  </div>
+                  <div style={{ color: P.soft, fontSize: 20, fontFamily: PIXEL_FONT, flexShrink: 0 }}>▶</div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 20, fontWeight: 700 }}>{hasSales && isFullySold ? fmt(realPnL + totalCost(item)) : fmt(item.currentPrice)}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: isUp ? "#16a34a" : "#dc2626", marginTop: 4 }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
-                </div>
-                <div style={{ color: P.soft, fontSize: 20, flexShrink: 0 }}>›</div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Donut */}
       {items.length > 1 && (
@@ -1032,12 +1289,23 @@ function CalendarTab({ events, setEvents }) {
 
   return (
     <div>
-      {/* View toggle */}
-      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 14, padding: 4, marginBottom: 20 }}>
-        {[{ id: "list", label: "Liste", icon: "☰" }, { id: "grid", label: "Calendrier", icon: "⊞" }].map((v) => (
+      {/* View toggle - Retro style */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 20, border: `3px solid ${P.border}` }}>
+        {[{ id: "list", label: "LISTE" }, { id: "grid", label: "CALENDRIER" }].map((v, idx) => (
           <button key={v.id} onClick={() => setView(v.id)}
-            style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "none", background: view === v.id ? "#fff" : "transparent", color: view === v.id ? P.text : P.soft, fontSize: 14, fontWeight: view === v.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", boxShadow: view === v.id ? "0 1px 6px rgba(100,80,140,0.12)" : "none" }}>
-            {v.icon} {v.label}
+            style={{
+              flex: 1,
+              padding: "12px 8px",
+              border: "none",
+              borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
+              background: view === v.id ? P.yellow : P.card,
+              color: P.text,
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 1,
+            }}>
+            {view === v.id && "* "}{v.label}{view === v.id && " *"}
           </button>
         ))}
       </div>
@@ -1328,16 +1596,36 @@ function ResourcesTab({ resources, setResources }) {
 
   return (
     <div>
-      {/* Filter pills */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+      {/* Filter pills - Retro style */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
         <button onClick={() => setFilter("all")}
-          style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === "all" ? P.a1 : "#f1f5f9", color: filter === "all" ? "#fff" : P.soft, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-          Tous {resources.length > 0 && `(${resources.length})`}
+          style={{
+            padding: "8px 12px",
+            border: `3px solid ${P.border}`,
+            background: filter === "all" ? P.red : P.card,
+            color: filter === "all" ? "#fff" : P.text,
+            fontSize: 8,
+            fontFamily: PIXEL_FONT,
+            cursor: "pointer",
+            letterSpacing: 0.5,
+            boxShadow: filter === "all" ? "none" : "2px 2px 0 rgba(0,0,0,0.2)",
+          }}>
+          TOUS {resources.length > 0 && `(${resources.length})`}
         </button>
         {Object.entries(RESOURCE_TYPES).map(([k, v]) => counts[k] ? (
           <button key={k} onClick={() => setFilter(k)}
-            style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: filter === k ? v.color : v.bg, color: filter === k ? "#fff" : v.color, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-            {v.icon} {v.label} ({counts[k]})
+            style={{
+              padding: "8px 12px",
+              border: `3px solid ${P.border}`,
+              background: filter === k ? v.color : P.card,
+              color: filter === k ? "#fff" : P.text,
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 0.5,
+              boxShadow: filter === k ? "none" : "2px 2px 0 rgba(0,0,0,0.2)",
+            }}>
+            {v.label.toUpperCase()} ({counts[k]})
           </button>
         ) : null)}
       </div>
@@ -1385,21 +1673,21 @@ function ResourcesTab({ resources, setResources }) {
 // MAIN APP — routing + persistence
 // ═══════════════════════════════════════════════════════════
 const TABS = [
-  { id: "wallet", label: "Wallet", icon: "💰" },
-  { id: "calendar", label: "Calendrier", icon: "📅" },
-  { id: "spots", label: "Spots", icon: "📍" },
-  { id: "resources", label: "Ressources", icon: "📚" },
+  { id: "wallet", label: "COLLECTION", icon: "BAG" },
+  { id: "calendar", label: "CALENDRIER", icon: "DAY" },
+  { id: "spots", label: "SPOTS", icon: "MAP" },
+  { id: "resources", label: "GUIDES", icon: "DEX" },
 ];
 
 
 // ═══════════════════════════════════════════════════════════
-// SIDEBAR COMPONENT (Desktop only)
+// SIDEBAR COMPONENT (Desktop only) - RETRO STYLE
 // ═══════════════════════════════════════════════════════════
 function Sidebar({ tab, setTab, user, onLogout }) {
   return (
     <div style={{
-      width: 240,
-      background: P.sidebar,
+      width: 220,
+      background: P.red,
       height: "100vh",
       position: "fixed",
       left: 0,
@@ -1407,16 +1695,22 @@ function Sidebar({ tab, setTab, user, onLogout }) {
       display: "flex",
       flexDirection: "column",
       zIndex: 40,
+      borderRight: `4px solid ${P.border}`,
     }}>
       {/* Logo */}
-      <div style={{ padding: "28px 24px 24px" }}>
-        <span style={{ fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>Hexuo</span>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Portfolio Manager</div>
+      <div style={{ padding: "24px 20px 20px", borderBottom: `3px solid ${P.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Pokeball size={32} />
+          <div>
+            <div style={{ fontSize: 14, fontFamily: PIXEL_FONT, color: "#fff", letterSpacing: 2 }}>HEXUO</div>
+            <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>TCG Portfolio</div>
+          </div>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav style={{ flex: 1, padding: "0 12px" }}>
-        {TABS.map((t) => {
+      {/* Navigation - Game Boy menu style */}
+      <nav style={{ flex: 1, padding: "16px 12px" }}>
+        {TABS.map((t, index) => {
           const isActive = tab === t.id;
           return (
             <button
@@ -1425,51 +1719,59 @@ function Sidebar({ tab, setTab, user, onLogout }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
+                gap: 12,
                 width: "100%",
-                padding: "14px 16px",
-                marginBottom: 4,
-                borderRadius: 10,
-                border: "none",
-                background: isActive ? "rgba(255,255,255,0.1)" : "transparent",
-                color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
-                fontSize: 15,
-                fontWeight: isActive ? 600 : 500,
+                padding: "12px 14px",
+                marginBottom: 6,
+                border: isActive ? `3px solid #fff` : `3px solid transparent`,
+                borderRadius: 0,
+                background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                color: "#fff",
+                fontSize: 10,
+                fontFamily: PIXEL_FONT,
                 cursor: "pointer",
-                fontFamily: "inherit",
                 textAlign: "left",
-                transition: "all 0.15s",
+                letterSpacing: 1,
               }}
-              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
             >
-              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              {/* Selection arrow */}
+              <span style={{ opacity: isActive ? 1 : 0, fontSize: 12 }}>▶</span>
+              <span style={{
+                background: isActive ? P.yellow : "rgba(255,255,255,0.3)",
+                color: isActive ? P.border : "#fff",
+                padding: "4px 8px",
+                fontSize: 8,
+                border: `2px solid ${P.border}`,
+              }}>{t.icon}</span>
               {t.label}
             </button>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>v1.0 — Cloud sync</div>
+      {/* Footer - Trainer info */}
+      <div style={{ padding: "16px", borderTop: `3px solid ${P.border}`, background: "rgba(0,0,0,0.1)" }}>
+        <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>TRAINER</div>
+        <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: "#fff", marginBottom: 12, overflow: "hidden", textOverflow: "ellipsis" }}>
+          {user?.email?.split("@")[0] || "???"}
+        </div>
         {user && (
           <button
             onClick={onLogout}
             style={{
-              marginTop: 12,
               width: "100%",
               padding: "10px",
-              borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.2)",
+              border: `3px solid #fff`,
+              borderRadius: 0,
               background: "transparent",
-              color: "rgba(255,255,255,0.6)",
-              fontSize: 13,
+              color: "#fff",
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
               cursor: "pointer",
-              fontFamily: "inherit",
+              letterSpacing: 1,
             }}
           >
-            Déconnexion
+            DECONNEXION
           </button>
         )}
       </div>
@@ -1478,7 +1780,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AUTH PAGE
+// AUTH PAGE - RETRO POKEMON STYLE
 // ═══════════════════════════════════════════════════════════
 function AuthPage({ onAuth }) {
   const [mode, setMode] = useState("login"); // "login" | "signup"
@@ -1500,7 +1802,7 @@ function AuthPage({ onAuth }) {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data.user && !data.session) {
-          setMessage("Vérifie ton email pour confirmer ton compte !");
+          setMessage("Verifie ton email pour confirmer ton compte!");
         } else if (data.session) {
           onAuth(data.session);
         }
@@ -1521,61 +1823,79 @@ function AuthPage({ onAuth }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+      background: P.red,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "'Inter', 'Sora', sans-serif",
+      fontFamily: BODY_FONT,
       padding: 20,
+      position: "relative",
+      overflow: "hidden",
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      {/* Fonts */}
+      <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+      {/* Decorative Pokeballs */}
+      <div style={{ position: "absolute", top: 40, left: 40, opacity: 0.1 }}>
+        <Pokeball size={120} />
+      </div>
+      <div style={{ position: "absolute", bottom: 40, right: 40, opacity: 0.1 }}>
+        <Pokeball size={80} />
+      </div>
 
       <div style={{
-        background: "#fff",
-        borderRadius: 20,
-        padding: isDesktop ? "48px 56px" : "32px 28px",
+        background: P.card,
+        border: `4px solid ${P.border}`,
+        padding: isDesktop ? "40px 48px" : "28px 24px",
         width: "100%",
-        maxWidth: 420,
-        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+        maxWidth: 400,
+        boxShadow: "8px 8px 0 rgba(0,0,0,0.3)",
+        position: "relative",
       }}>
+        {/* Corner decorations */}
+        <div style={{ position: "absolute", top: -4, left: -4, width: 16, height: 16, background: P.yellow, border: `4px solid ${P.border}` }} />
+        <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, background: P.blue, border: `4px solid ${P.border}` }} />
+        <div style={{ position: "absolute", bottom: -4, left: -4, width: 16, height: 16, background: P.green, border: `4px solid ${P.border}` }} />
+        <div style={{ position: "absolute", bottom: -4, right: -4, width: 16, height: 16, background: P.red, border: `4px solid ${P.border}` }} />
+
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: P.text, margin: 0 }}>Hexuo</h1>
-          <p style={{ fontSize: 14, color: P.soft, marginTop: 8 }}>Gère ton portfolio Pokémon</p>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <Pokeball size={48} style={{ marginBottom: 16 }} />
+          <h1 style={{ fontSize: 20, fontFamily: PIXEL_FONT, color: P.text, margin: 0, letterSpacing: 3 }}>HEXUO</h1>
+          <p style={{ fontSize: 18, fontFamily: BODY_FONT, color: P.soft, marginTop: 8 }}>TCG Portfolio Tracker</p>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 28, background: "#f1f5f9", borderRadius: 12, padding: 4 }}>
+        {/* Tabs - Game Boy style */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 24, border: `3px solid ${P.border}` }}>
           {[
-            { id: "login", label: "Connexion" },
-            { id: "signup", label: "Inscription" },
-          ].map((t) => (
+            { id: "login", label: "CONNEXION" },
+            { id: "signup", label: "NOUVEAU" },
+          ].map((t, idx) => (
             <button
               key={t.id}
               onClick={() => { setMode(t.id); setError(null); setMessage(null); }}
               style={{
                 flex: 1,
-                padding: "12px",
-                borderRadius: 10,
+                padding: "12px 8px",
                 border: "none",
-                background: mode === t.id ? "#fff" : "transparent",
-                color: mode === t.id ? P.text : P.soft,
-                fontSize: 14,
-                fontWeight: mode === t.id ? 600 : 500,
+                borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
+                background: mode === t.id ? P.yellow : P.card,
+                color: P.text,
+                fontSize: 8,
+                fontFamily: PIXEL_FONT,
                 cursor: "pointer",
-                fontFamily: "inherit",
-                boxShadow: mode === t.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                letterSpacing: 1,
               }}
             >
-              {t.label}
+              {mode === t.id && "▶ "}{t.label}
             </button>
           ))}
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, display: "block", marginBottom: 6 }}>Email</label>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, display: "block", marginBottom: 8, letterSpacing: 1 }}>EMAIL</label>
             <input
               type="email"
               value={email}
@@ -1584,65 +1904,65 @@ function AuthPage({ onAuth }) {
               placeholder="ton@email.com"
               style={{
                 width: "100%",
-                padding: "14px 16px",
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                fontSize: 15,
-                fontFamily: "inherit",
+                padding: "12px 14px",
+                border: `3px solid ${P.border}`,
+                fontSize: 18,
+                fontFamily: BODY_FONT,
                 outline: "none",
                 boxSizing: "border-box",
-                background: "#f8fafc",
+                background: P.card,
               }}
             />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, display: "block", marginBottom: 6 }}>Mot de passe</label>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, display: "block", marginBottom: 8, letterSpacing: 1 }}>MOT DE PASSE</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              placeholder="••••••••"
+              placeholder="********"
               style={{
                 width: "100%",
-                padding: "14px 16px",
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                fontSize: 15,
-                fontFamily: "inherit",
+                padding: "12px 14px",
+                border: `3px solid ${P.border}`,
+                fontSize: 18,
+                fontFamily: BODY_FONT,
                 outline: "none",
                 boxSizing: "border-box",
-                background: "#f8fafc",
+                background: P.card,
               }}
             />
             {mode === "signup" && (
-              <div style={{ fontSize: 12, color: P.soft, marginTop: 6 }}>Minimum 6 caractères</div>
+              <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft, marginTop: 6 }}>Min. 6 caracteres</div>
             )}
           </div>
 
           {error && (
             <div style={{
-              background: "#fef2f2",
-              color: "#dc2626",
-              padding: "12px 14px",
-              borderRadius: 10,
-              marginBottom: 18,
+              background: P.card,
+              border: `3px solid ${P.danger}`,
+              color: P.danger,
+              padding: "10px 12px",
+              marginBottom: 16,
               fontSize: 14,
+              fontFamily: BODY_FONT,
             }}>
-              {error}
+              ! {error}
             </div>
           )}
 
           {message && (
             <div style={{
-              background: "#f0fdf4",
-              color: "#16a34a",
-              padding: "12px 14px",
-              borderRadius: 10,
-              marginBottom: 18,
+              background: P.card,
+              border: `3px solid ${P.green}`,
+              color: P.green,
+              padding: "10px 12px",
+              marginBottom: 16,
               fontSize: 14,
+              fontFamily: BODY_FONT,
             }}>
               {message}
             </div>
@@ -1653,18 +1973,18 @@ function AuthPage({ onAuth }) {
             disabled={loading}
             style={{
               width: "100%",
-              padding: "16px",
-              borderRadius: 12,
-              border: "none",
-              background: loading ? "#94a3b8" : P.sidebar,
+              padding: "14px",
+              border: `3px solid ${P.border}`,
+              background: loading ? P.borderLight : P.red,
               color: "#fff",
-              fontSize: 16,
-              fontWeight: 600,
+              fontSize: 10,
+              fontFamily: PIXEL_FONT,
               cursor: loading ? "wait" : "pointer",
-              fontFamily: "inherit",
+              letterSpacing: 1,
+              boxShadow: loading ? "none" : "4px 4px 0 rgba(0,0,0,0.3)",
             }}
           >
-            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            {loading ? "CHARGEMENT..." : mode === "login" ? "CONNEXION" : "CREER COMPTE"}
           </button>
         </form>
       </div>
@@ -1965,7 +2285,7 @@ export default function App() {
     setLoaded(false);
   };
 
-  // Loading state
+  // Loading state - Retro style
   if (authLoading) {
     return (
       <div style={{
@@ -1974,13 +2294,17 @@ export default function App() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'Inter', 'Sora', sans-serif",
+        fontFamily: BODY_FONT,
       }}>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: P.text, marginBottom: 12 }}>Hexuo</div>
-          <div style={{ fontSize: 14, color: P.soft }}>Chargement...</div>
+          <Pokeball size={64} style={{ marginBottom: 20, animation: "spin 1s linear infinite" }} />
+          <div style={{ fontSize: 16, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 12, letterSpacing: 2 }}>HEXUO</div>
+          <div style={{ fontSize: 20, fontFamily: BODY_FONT, color: P.soft }}>Chargement...</div>
         </div>
+        <style>{`
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}</style>
       </div>
     );
   }
@@ -1990,23 +2314,29 @@ export default function App() {
     return <AuthPage onAuth={setSession} />;
   }
 
-  // Desktop layout with sidebar
+  // CSS animations for retro effects
+  const retroStyles = `
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    @keyframes sparkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
+  `;
+
+  // Desktop layout with sidebar - Retro style
   if (isDesktop) {
     return (
-      <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text }}>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div style={{ minHeight: "100vh", background: P.bg, fontFamily: BODY_FONT, color: P.text }}>
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+        <style>{retroStyles}</style>
 
         {/* Sidebar */}
         <Sidebar tab={tab} setTab={setTab} user={session.user} onLogout={handleLogout} />
 
         {/* Main content */}
-        <div style={{ marginLeft: 240, minHeight: "100vh" }}>
-          {/* Header */}
+        <div style={{ marginLeft: 220, minHeight: "100vh" }}>
+          {/* Header - Retro style */}
           <header style={{
-            background: "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid #e2e8f0",
-            padding: "20px 40px",
+            background: P.blue,
+            borderBottom: `4px solid ${P.border}`,
+            padding: "16px 32px",
             position: "sticky",
             top: 0,
             zIndex: 30,
@@ -2014,18 +2344,25 @@ export default function App() {
             justifyContent: "space-between",
             alignItems: "center",
           }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: P.text, margin: 0 }}>
-              {TABS.find(t => t.id === tab)?.label || "Hexuo"}
+            <h1 style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: "#fff", margin: 0, letterSpacing: 2 }}>
+              {TABS.find(t => t.id === tab)?.label || "HEXUO"}
             </h1>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ fontSize: 13, color: P.soft }}>
-                {session.user.email}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                fontSize: 14,
+                fontFamily: BODY_FONT,
+                color: "#fff",
+                background: "rgba(0,0,0,0.2)",
+                padding: "6px 12px",
+                border: `2px solid rgba(255,255,255,0.3)`,
+              }}>
+                {session.user.email?.split("@")[0]}
               </div>
             </div>
           </header>
 
           {/* Page content */}
-          <main style={{ padding: "32px 40px", maxWidth: 1400, margin: "0 auto" }}>
+          <main style={{ padding: "28px 32px", maxWidth: 1400, margin: "0 auto" }}>
             {tab === "wallet" && <WalletTab items={items} setItems={setItemsAndSync} events={events} />}
             {tab === "calendar" && <CalendarTab events={events} setEvents={setEventsAndSync} />}
             {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpotsAndSync} items={items} />}
@@ -2036,48 +2373,91 @@ export default function App() {
     );
   }
 
-  // Mobile layout
+  // Mobile layout - Retro style
   return (
-    <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: "100vh", background: P.bg, fontFamily: BODY_FONT, color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+      <style>{retroStyles}</style>
 
-      <Blob style={{ top: -80, right: -80, width: 300, height: 300, background: "#94a3b8" }} />
-      <Blob style={{ bottom: 100, left: -100, width: 260, height: 260, background: "#cbd5e1" }} />
-
-      {/* Header with logout */}
-      <div style={{ position: "relative", zIndex: 1, padding: "18px 22px 10px", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: P.text, letterSpacing: "-0.5px" }}>Hexuo</span>
+      {/* Header with logout - Retro style */}
+      <div style={{
+        position: "relative",
+        zIndex: 1,
+        padding: "14px 18px",
+        flexShrink: 0,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        background: P.red,
+        borderBottom: `4px solid ${P.border}`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Pokeball size={28} />
+          <span style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: "#fff", letterSpacing: 2 }}>HEXUO</span>
+        </div>
         <button
           onClick={handleLogout}
           style={{
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "1px solid #e2e8f0",
-            background: "#fff",
-            color: P.soft,
-            fontSize: 13,
+            padding: "8px 12px",
+            border: `2px solid #fff`,
+            background: "transparent",
+            color: "#fff",
+            fontSize: 8,
+            fontFamily: PIXEL_FONT,
             cursor: "pointer",
-            fontFamily: "inherit",
+            letterSpacing: 1,
           }}
         >
-          Déconnexion
+          QUIT
         </button>
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 22px 120px" }}>
+      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "16px 18px 130px" }}>
         {tab === "wallet" && <WalletTab items={items} setItems={setItemsAndSync} events={events} />}
         {tab === "calendar" && <CalendarTab events={events} setEvents={setEventsAndSync} />}
         {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpotsAndSync} items={items} />}
         {tab === "resources" && <ResourcesTab resources={resources} setResources={setResourcesAndSync} />}
       </div>
 
-      {/* Bottom tab bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", gap: 6, padding: "12px 18px 32px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0" }}>
-        {TABS.map((t) => (
+      {/* Bottom tab bar - Retro Game Boy style */}
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        display: "flex",
+        gap: 0,
+        padding: "0",
+        background: P.card,
+        borderTop: `4px solid ${P.border}`,
+      }}>
+        {TABS.map((t, idx) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "none", background: tab === t.id ? "#1e293b" : "transparent", color: tab === t.id ? "#fff" : P.soft, fontSize: 12, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 22 }}>{t.icon}</span>
+            style={{
+              flex: 1,
+              padding: "14px 8px 28px",
+              border: "none",
+              borderRight: idx < TABS.length - 1 ? `2px solid ${P.borderLight}` : "none",
+              background: tab === t.id ? P.yellow : P.card,
+              color: P.text,
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 6,
+              letterSpacing: 0.5,
+            }}>
+            <span style={{
+              fontSize: 10,
+              background: tab === t.id ? P.border : P.borderLight,
+              color: tab === t.id ? "#fff" : P.text,
+              padding: "4px 8px",
+              border: `2px solid ${P.border}`,
+            }}>{t.icon}</span>
             {t.label}
           </button>
         ))}
