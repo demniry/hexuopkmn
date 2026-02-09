@@ -637,24 +637,20 @@ function WalletTab({ items, setItems, events }) {
       <div style={{
         background: P.primary,
         border: `4px solid ${P.border}`,
-        padding: "20px",
+        padding: "24px",
         color: "#fff",
         marginBottom: 20,
-        boxShadow: "6px 6px 0 rgba(0,0,0,0.25)",
-        position: "relative",
+        boxShadow: "0 4px 20px rgba(92, 107, 192, 0.3)",
+        borderRadius: 12,
       }}>
-        {/* Corner decorations */}
-        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.warning }} />
-        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.warning }} />
-
         <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>VALEUR TOTALE</div>
         <div style={{ fontSize: 32, fontFamily: BODY_FONT, fontWeight: 700 }}>{fmt(totalCur)}</div>
         <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{
             background: totalRealPnL >= 0 ? P.success : P.danger,
             color: "#fff",
-            padding: "8px 12px",
-            border: `2px solid ${P.border}`,
+            padding: "8px 14px",
+            borderRadius: 8,
             fontSize: 16,
             fontFamily: BODY_FONT,
             fontWeight: 700,
@@ -1519,7 +1515,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
   return (
     <div style={{
       width: 220,
-      background: P.primary,
+      background: `linear-gradient(180deg, ${P.primary} 0%, #4a5ab8 100%)`,
       height: "100vh",
       position: "fixed",
       left: 0,
@@ -1527,22 +1523,41 @@ function Sidebar({ tab, setTab, user, onLogout }) {
       display: "flex",
       flexDirection: "column",
       zIndex: 40,
-      borderRight: `4px solid ${P.border}`,
+      boxShadow: "4px 0 20px rgba(0,0,0,0.1)",
     }}>
-      {/* Logo */}
-      <div style={{ padding: "24px 20px 20px", borderBottom: `3px solid ${P.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Pokeball size={32} />
+      {/* Logo - Enhanced */}
+      <div style={{
+        padding: "28px 20px 24px",
+        background: "rgba(255,255,255,0.08)",
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            background: "rgba(255,255,255,0.15)",
+            borderRadius: 10,
+            padding: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <Pokeball size={28} />
+          </div>
           <div>
-            <div style={{ fontSize: 14, fontFamily: PIXEL_FONT, color: "#fff", letterSpacing: 2 }}>HEXUO</div>
-            <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>TCG Portfolio</div>
+            <div style={{
+              fontSize: 12,
+              fontFamily: PIXEL_FONT,
+              color: "#fff",
+              letterSpacing: 2,
+              textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            }}>HEXUO</div>
+            <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>TCG Portfolio</div>
           </div>
         </div>
       </div>
 
-      {/* Navigation - Game Boy menu style */}
-      <nav style={{ flex: 1, padding: "16px 12px" }}>
-        {TABS.map((t, index) => {
+      {/* Navigation - Clean menu style */}
+      <nav style={{ flex: 1, padding: "20px 16px" }}>
+        {TABS.map((t) => {
           const isActive = tab === t.id;
           return (
             <button
@@ -1551,30 +1566,24 @@ function Sidebar({ tab, setTab, user, onLogout }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
                 width: "100%",
-                padding: "12px 14px",
-                marginBottom: 6,
-                border: isActive ? `3px solid #fff` : `3px solid transparent`,
-                borderRadius: 0,
-                background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                padding: "14px 16px",
+                marginBottom: 8,
+                border: "none",
+                borderRadius: 8,
+                background: isActive ? "rgba(255,255,255,0.2)" : "transparent",
                 color: "#fff",
-                fontSize: 10,
+                fontSize: 9,
                 fontFamily: PIXEL_FONT,
                 cursor: "pointer",
                 textAlign: "left",
                 letterSpacing: 1,
+                transition: "all 0.15s ease",
               }}
             >
               {/* Selection arrow */}
-              <span style={{ opacity: isActive ? 1 : 0, fontSize: 12 }}>▶</span>
-              <span style={{
-                background: isActive ? P.warning : "rgba(255,255,255,0.3)",
-                color: isActive ? P.border : "#fff",
-                padding: "4px 8px",
-                fontSize: 8,
-                border: `2px solid ${P.border}`,
-              }}>{t.icon}</span>
+              <span style={{ opacity: isActive ? 1 : 0.3, fontSize: 10, transition: "opacity 0.15s" }}>▶</span>
               {t.label}
             </button>
           );
@@ -2165,11 +2174,11 @@ export default function App() {
 
         {/* Main content */}
         <div style={{ marginLeft: 220, minHeight: "100vh" }}>
-          {/* Header - Retro style */}
+          {/* Header - Clean style */}
           <header style={{
-            background: P.primary,
-            borderBottom: `4px solid ${P.border}`,
-            padding: "16px 32px",
+            background: P.card,
+            borderBottom: `1px solid ${P.borderLight}`,
+            padding: "18px 32px",
             position: "sticky",
             top: 0,
             zIndex: 30,
@@ -2177,17 +2186,17 @@ export default function App() {
             justifyContent: "space-between",
             alignItems: "center",
           }}>
-            <h1 style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: "#fff", margin: 0, letterSpacing: 2 }}>
+            <h1 style={{ fontSize: 11, fontFamily: PIXEL_FONT, color: P.text, margin: 0, letterSpacing: 1 }}>
               {TABS.find(t => t.id === tab)?.label || "HEXUO"}
             </h1>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
                 fontSize: 14,
                 fontFamily: BODY_FONT,
-                color: "#fff",
-                background: "rgba(0,0,0,0.2)",
+                color: P.soft,
+                background: P.bg,
                 padding: "6px 12px",
-                border: `2px solid rgba(255,255,255,0.3)`,
+                borderRadius: 6,
               }}>
                 {session.user.email?.split("@")[0]}
               </div>
