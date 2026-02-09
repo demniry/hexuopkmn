@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { supabase } from "./supabase";
 
 // ═══════════════════════════════════════════════════════════
 // PALETTE & SHARED UTILS
@@ -1394,7 +1395,7 @@ const TABS = [
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR COMPONENT (Desktop only)
 // ═══════════════════════════════════════════════════════════
-function Sidebar({ tab, setTab }) {
+function Sidebar({ tab, setTab, user, onLogout }) {
   return (
     <div style={{
       width: 240,
@@ -1451,13 +1452,229 @@ function Sidebar({ tab, setTab }) {
 
       {/* Footer */}
       <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>v1.0 — Données locales</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>v1.0 — Cloud sync</div>
+        {user && (
+          <button
+            onClick={onLogout}
+            style={{
+              marginTop: 12,
+              width: "100%",
+              padding: "10px",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "transparent",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 13,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            Déconnexion
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH PAGE
+// ═══════════════════════════════════════════════════════════
+function AuthPage({ onAuth }) {
+  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
+  const isDesktop = useIsDesktop();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user && !data.session) {
+          setMessage("Vérifie ton email pour confirmer ton compte !");
+        } else if (data.session) {
+          onAuth(data.session);
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onAuth(data.session);
+      }
+    } catch (err) {
+      setError(err.message === "Invalid login credentials"
+        ? "Email ou mot de passe incorrect"
+        : err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Inter', 'Sora', sans-serif",
+      padding: 20,
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+      <div style={{
+        background: "#fff",
+        borderRadius: 20,
+        padding: isDesktop ? "48px 56px" : "32px 28px",
+        width: "100%",
+        maxWidth: 420,
+        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: P.text, margin: 0 }}>Hexuo</h1>
+          <p style={{ fontSize: 14, color: P.soft, marginTop: 8 }}>Gère ton portfolio Pokémon</p>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 28, background: "#f1f5f9", borderRadius: 12, padding: 4 }}>
+          {[
+            { id: "login", label: "Connexion" },
+            { id: "signup", label: "Inscription" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => { setMode(t.id); setError(null); setMessage(null); }}
+              style={{
+                flex: 1,
+                padding: "12px",
+                borderRadius: 10,
+                border: "none",
+                background: mode === t.id ? "#fff" : "transparent",
+                color: mode === t.id ? P.text : P.soft,
+                fontSize: 14,
+                fontWeight: mode === t.id ? 600 : 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                boxShadow: mode === t.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, display: "block", marginBottom: 6 }}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="ton@email.com"
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: 10,
+                border: "1px solid #e2e8f0",
+                fontSize: 15,
+                fontFamily: "inherit",
+                outline: "none",
+                boxSizing: "border-box",
+                background: "#f8fafc",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, display: "block", marginBottom: 6 }}>Mot de passe</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="••••••••"
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: 10,
+                border: "1px solid #e2e8f0",
+                fontSize: 15,
+                fontFamily: "inherit",
+                outline: "none",
+                boxSizing: "border-box",
+                background: "#f8fafc",
+              }}
+            />
+            {mode === "signup" && (
+              <div style={{ fontSize: 12, color: P.soft, marginTop: 6 }}>Minimum 6 caractères</div>
+            )}
+          </div>
+
+          {error && (
+            <div style={{
+              background: "#fef2f2",
+              color: "#dc2626",
+              padding: "12px 14px",
+              borderRadius: 10,
+              marginBottom: 18,
+              fontSize: 14,
+            }}>
+              {error}
+            </div>
+          )}
+
+          {message && (
+            <div style={{
+              background: "#f0fdf4",
+              color: "#16a34a",
+              padding: "12px 14px",
+              borderRadius: 10,
+              marginBottom: 18,
+              fontSize: 14,
+            }}>
+              {message}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "16px",
+              borderRadius: 12,
+              border: "none",
+              background: loading ? "#94a3b8" : P.sidebar,
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: loading ? "wait" : "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+          </button>
+        </form>
       </div>
     </div>
   );
 }
 
 export default function App() {
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [tab, setTab] = useState("wallet");
   const [items, setItems] = useState(INIT.items);
   const [events, setEvents] = useState(INIT.events);
@@ -1466,26 +1683,312 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const isDesktop = useIsDesktop();
 
-  // Migration V2→V3 items
-  const migrateItems = (raw) => raw.map((item) => {
-    if (item.transactions && Array.isArray(item.transactions)) return item;
-    return { id: item.id, name: item.name, type: item.type, currentPrice: item.currentPrice || item.buyPrice || 0, transactions: [{ id: item.id * 100 + 1, date: "2025-12-01", price: item.buyPrice || 0, quantity: item.quantity || 1, source: "Ancien import" }] };
-  });
-
-  // Load from localStorage
+  // Check auth session on mount
   useEffect(() => {
-    try { const r = localStorage.getItem("pokemon-wallet-items"); if (r) setItems(migrateItems(JSON.parse(r))); } catch (e) {}
-    try { const r = localStorage.getItem("pokemon-wallet-events"); if (r) setEvents(JSON.parse(r)); } catch (e) {}
-    try { const r = localStorage.getItem("pokemon-wallet-spots"); if (r) setSpots(JSON.parse(r)); } catch (e) {}
-    try { const r = localStorage.getItem("hexuo-resources"); if (r) setResources(JSON.parse(r)); } catch (e) {}
-    setLoaded(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Save each collection independently
-  useEffect(() => { if (!loaded) return; try { localStorage.setItem("pokemon-wallet-items", JSON.stringify(items)); } catch (e) {} }, [items, loaded]);
-  useEffect(() => { if (!loaded) return; try { localStorage.setItem("pokemon-wallet-events", JSON.stringify(events)); } catch (e) {} }, [events, loaded]);
-  useEffect(() => { if (!loaded) return; try { localStorage.setItem("pokemon-wallet-spots", JSON.stringify(spots)); } catch (e) {} }, [spots, loaded]);
-  useEffect(() => { if (!loaded) return; try { localStorage.setItem("hexuo-resources", JSON.stringify(resources)); } catch (e) {} }, [resources, loaded]);
+  // Load data from Supabase when logged in
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const loadData = async () => {
+      const userId = session.user.id;
+
+      // Load items
+      const { data: itemsData } = await supabase
+        .from("items")
+        .select("*")
+        .eq("user_id", userId);
+      if (itemsData) {
+        setItems(itemsData.map(i => ({
+          id: i.id,
+          name: i.name,
+          type: i.type,
+          currentPrice: Number(i.current_price) || 0,
+          transactions: i.transactions || [],
+          sold: i.sold || [],
+        })));
+      }
+
+      // Load events
+      const { data: eventsData } = await supabase
+        .from("events")
+        .select("*")
+        .eq("user_id", userId);
+      if (eventsData) {
+        setEvents(eventsData.map(e => ({
+          id: e.id,
+          title: e.title,
+          date: e.date,
+          type: e.type,
+          note: e.note,
+        })));
+      }
+
+      // Load spots
+      const { data: spotsData } = await supabase
+        .from("spots")
+        .select("*")
+        .eq("user_id", userId);
+      if (spotsData) {
+        setSpots(spotsData.map(s => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          rating: s.rating,
+          note: s.note,
+        })));
+      }
+
+      // Load resources
+      const { data: resourcesData } = await supabase
+        .from("resources")
+        .select("*")
+        .eq("user_id", userId);
+      if (resourcesData) {
+        setResources(resourcesData.map(r => ({
+          id: r.id,
+          title: r.title,
+          url: r.url,
+          type: r.type,
+          note: r.note,
+        })));
+      }
+
+      setLoaded(true);
+    };
+
+    loadData();
+  }, [session]);
+
+  // Sync items to Supabase
+  const syncItems = useCallback(async (newItems) => {
+    if (!session?.user || !loaded) return;
+    const userId = session.user.id;
+
+    // Get current DB items
+    const { data: dbItems } = await supabase.from("items").select("id").eq("user_id", userId);
+    const dbIds = new Set((dbItems || []).map(i => i.id));
+    const newIds = new Set(newItems.map(i => i.id));
+
+    // Delete removed items
+    for (const id of dbIds) {
+      if (!newIds.has(id)) {
+        await supabase.from("items").delete().eq("id", id);
+      }
+    }
+
+    // Upsert items
+    for (const item of newItems) {
+      if (dbIds.has(item.id)) {
+        await supabase.from("items").update({
+          name: item.name,
+          type: item.type,
+          current_price: item.currentPrice,
+          transactions: item.transactions,
+          sold: item.sold || [],
+        }).eq("id", item.id);
+      } else {
+        const { data } = await supabase.from("items").insert({
+          user_id: userId,
+          name: item.name,
+          type: item.type,
+          current_price: item.currentPrice,
+          transactions: item.transactions,
+          sold: item.sold || [],
+        }).select().single();
+        if (data) {
+          // Update local id with DB id
+          item.id = data.id;
+        }
+      }
+    }
+  }, [session, loaded]);
+
+  // Sync events to Supabase
+  const syncEvents = useCallback(async (newEvents) => {
+    if (!session?.user || !loaded) return;
+    const userId = session.user.id;
+
+    const { data: dbEvents } = await supabase.from("events").select("id").eq("user_id", userId);
+    const dbIds = new Set((dbEvents || []).map(e => e.id));
+    const newIds = new Set(newEvents.map(e => e.id));
+
+    for (const id of dbIds) {
+      if (!newIds.has(id)) {
+        await supabase.from("events").delete().eq("id", id);
+      }
+    }
+
+    for (const event of newEvents) {
+      if (dbIds.has(event.id)) {
+        await supabase.from("events").update({
+          title: event.title,
+          date: event.date,
+          type: event.type,
+          note: event.note,
+        }).eq("id", event.id);
+      } else {
+        const { data } = await supabase.from("events").insert({
+          user_id: userId,
+          title: event.title,
+          date: event.date,
+          type: event.type,
+          note: event.note,
+        }).select().single();
+        if (data) event.id = data.id;
+      }
+    }
+  }, [session, loaded]);
+
+  // Sync spots to Supabase
+  const syncSpots = useCallback(async (newSpots) => {
+    if (!session?.user || !loaded) return;
+    const userId = session.user.id;
+
+    const { data: dbSpots } = await supabase.from("spots").select("id").eq("user_id", userId);
+    const dbIds = new Set((dbSpots || []).map(s => s.id));
+    const newIds = new Set(newSpots.map(s => s.id));
+
+    for (const id of dbIds) {
+      if (!newIds.has(id)) {
+        await supabase.from("spots").delete().eq("id", id);
+      }
+    }
+
+    for (const spot of newSpots) {
+      if (dbIds.has(spot.id)) {
+        await supabase.from("spots").update({
+          name: spot.name,
+          type: spot.type,
+          rating: spot.rating,
+          note: spot.note,
+        }).eq("id", spot.id);
+      } else {
+        const { data } = await supabase.from("spots").insert({
+          user_id: userId,
+          name: spot.name,
+          type: spot.type,
+          rating: spot.rating,
+          note: spot.note,
+        }).select().single();
+        if (data) spot.id = data.id;
+      }
+    }
+  }, [session, loaded]);
+
+  // Sync resources to Supabase
+  const syncResources = useCallback(async (newResources) => {
+    if (!session?.user || !loaded) return;
+    const userId = session.user.id;
+
+    const { data: dbResources } = await supabase.from("resources").select("id").eq("user_id", userId);
+    const dbIds = new Set((dbResources || []).map(r => r.id));
+    const newIds = new Set(newResources.map(r => r.id));
+
+    for (const id of dbIds) {
+      if (!newIds.has(id)) {
+        await supabase.from("resources").delete().eq("id", id);
+      }
+    }
+
+    for (const resource of newResources) {
+      if (dbIds.has(resource.id)) {
+        await supabase.from("resources").update({
+          title: resource.title,
+          url: resource.url,
+          type: resource.type,
+          note: resource.note,
+        }).eq("id", resource.id);
+      } else {
+        const { data } = await supabase.from("resources").insert({
+          user_id: userId,
+          title: resource.title,
+          url: resource.url,
+          type: resource.type,
+          note: resource.note,
+        }).select().single();
+        if (data) resource.id = data.id;
+      }
+    }
+  }, [session, loaded]);
+
+  // Wrapped setters that sync to Supabase
+  const setItemsAndSync = useCallback((newItemsOrFn) => {
+    setItems(prev => {
+      const newItems = typeof newItemsOrFn === "function" ? newItemsOrFn(prev) : newItemsOrFn;
+      syncItems(newItems);
+      return newItems;
+    });
+  }, [syncItems]);
+
+  const setEventsAndSync = useCallback((newEventsOrFn) => {
+    setEvents(prev => {
+      const newEvents = typeof newEventsOrFn === "function" ? newEventsOrFn(prev) : newEventsOrFn;
+      syncEvents(newEvents);
+      return newEvents;
+    });
+  }, [syncEvents]);
+
+  const setSpotsAndSync = useCallback((newSpotsOrFn) => {
+    setSpots(prev => {
+      const newSpots = typeof newSpotsOrFn === "function" ? newSpotsOrFn(prev) : newSpotsOrFn;
+      syncSpots(newSpots);
+      return newSpots;
+    });
+  }, [syncSpots]);
+
+  const setResourcesAndSync = useCallback((newResourcesOrFn) => {
+    setResources(prev => {
+      const newResources = typeof newResourcesOrFn === "function" ? newResourcesOrFn(prev) : newResourcesOrFn;
+      syncResources(newResources);
+      return newResources;
+    });
+  }, [syncResources]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setItems(INIT.items);
+    setEvents(INIT.events);
+    setSpots(INIT.spots);
+    setResources(INIT.resources);
+    setLoaded(false);
+  };
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: P.bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Inter', 'Sora', sans-serif",
+      }}>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: P.text, marginBottom: 12 }}>Hexuo</div>
+          <div style={{ fontSize: 14, color: P.soft }}>Chargement...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in -> show auth page
+  if (!session) {
+    return <AuthPage onAuth={setSession} />;
+  }
 
   // Desktop layout with sidebar
   if (isDesktop) {
@@ -1494,7 +1997,7 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
         {/* Sidebar */}
-        <Sidebar tab={tab} setTab={setTab} />
+        <Sidebar tab={tab} setTab={setTab} user={session.user} onLogout={handleLogout} />
 
         {/* Main content */}
         <div style={{ marginLeft: 240, minHeight: "100vh" }}>
@@ -1514,24 +2017,26 @@ export default function App() {
             <h1 style={{ fontSize: 22, fontWeight: 700, color: P.text, margin: 0 }}>
               {TABS.find(t => t.id === tab)?.label || "Hexuo"}
             </h1>
-            <div style={{ fontSize: 13, color: P.soft }}>
-              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ fontSize: 13, color: P.soft }}>
+                {session.user.email}
+              </div>
             </div>
           </header>
 
           {/* Page content */}
           <main style={{ padding: "32px 40px", maxWidth: 1400, margin: "0 auto" }}>
-            {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
-            {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
-            {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
-            {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
+            {tab === "wallet" && <WalletTab items={items} setItems={setItemsAndSync} events={events} />}
+            {tab === "calendar" && <CalendarTab events={events} setEvents={setEventsAndSync} />}
+            {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpotsAndSync} items={items} />}
+            {tab === "resources" && <ResourcesTab resources={resources} setResources={setResourcesAndSync} />}
           </main>
         </div>
       </div>
     );
   }
 
-  // Mobile layout (original)
+  // Mobile layout
   return (
     <div style={{ minHeight: "100vh", background: P.bg, fontFamily: "'Inter', 'Sora', sans-serif", color: P.text, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -1539,17 +2044,32 @@ export default function App() {
       <Blob style={{ top: -80, right: -80, width: 300, height: 300, background: "#94a3b8" }} />
       <Blob style={{ bottom: 100, left: -100, width: 260, height: 260, background: "#cbd5e1" }} />
 
-      {/* Logo — top right, discreet */}
-      <div style={{ position: "relative", zIndex: 1, padding: "22px 24px 14px", flexShrink: 0, textAlign: "right" }}>
+      {/* Header with logout */}
+      <div style={{ position: "relative", zIndex: 1, padding: "18px 22px 10px", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 20, fontWeight: 700, color: P.text, letterSpacing: "-0.5px" }}>Hexuo</span>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            background: "#fff",
+            color: P.soft,
+            fontSize: 13,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          Déconnexion
+        </button>
       </div>
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, padding: "0 22px 120px" }}>
-        {tab === "wallet" && <WalletTab items={items} setItems={setItems} events={events} />}
-        {tab === "calendar" && <CalendarTab events={events} setEvents={setEvents} />}
-        {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpots} items={items} />}
-        {tab === "resources" && <ResourcesTab resources={resources} setResources={setResources} />}
+        {tab === "wallet" && <WalletTab items={items} setItems={setItemsAndSync} events={events} />}
+        {tab === "calendar" && <CalendarTab events={events} setEvents={setEventsAndSync} />}
+        {tab === "spots" && <SpotsTab spots={spots} setSpots={setSpotsAndSync} items={items} />}
+        {tab === "resources" && <ResourcesTab resources={resources} setResources={setResourcesAndSync} />}
       </div>
 
       {/* Bottom tab bar */}
