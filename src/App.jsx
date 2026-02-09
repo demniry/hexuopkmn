@@ -211,6 +211,7 @@ const INIT = {
   events: [],
   spots: [],
   resources: [],
+  wishlist: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -646,6 +647,93 @@ function PortfolioChart({ items }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// ITEM PRICE HISTORY CHART
+// ═══════════════════════════════════════════════════════════
+function ItemPriceChart({ priceHistory }) {
+  if (!priceHistory || priceHistory.length < 2) return null;
+
+  const width = 280;
+  const height = 100;
+  const padding = { top: 10, right: 10, bottom: 20, left: 45 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const prices = priceHistory.map(p => p.price);
+  const maxPrice = Math.max(...prices);
+  const minPrice = Math.min(...prices);
+  const priceRange = maxPrice - minPrice || 1;
+
+  const scaleX = (i) => padding.left + (i / (priceHistory.length - 1)) * chartWidth;
+  const scaleY = (price) => padding.top + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
+
+  const linePath = priceHistory.map((p, i) =>
+    `${i === 0 ? 'M' : 'L'} ${scaleX(i)} ${scaleY(p.price)}`
+  ).join(' ');
+
+  const firstPrice = priceHistory[0].price;
+  const lastPrice = priceHistory[priceHistory.length - 1].price;
+  const isUp = lastPrice >= firstPrice;
+
+  return (
+    <svg width={width} height={height} style={{ display: "block", maxWidth: "100%", marginBottom: 8 }}>
+      {/* Grid lines */}
+      {[0, 0.5, 1].map(pct => (
+        <g key={pct}>
+          <line
+            x1={padding.left}
+            y1={scaleY(minPrice + priceRange * pct)}
+            x2={width - padding.right}
+            y2={scaleY(minPrice + priceRange * pct)}
+            stroke={P.borderLight}
+            strokeDasharray="2 2"
+          />
+          <text
+            x={padding.left - 5}
+            y={scaleY(minPrice + priceRange * pct)}
+            fontSize={10}
+            fontFamily={BODY_FONT}
+            fill={P.soft}
+            textAnchor="end"
+            dominantBaseline="middle"
+          >
+            {Math.round(minPrice + priceRange * pct)}€
+          </text>
+        </g>
+      ))}
+
+      {/* Area */}
+      <path
+        d={linePath + ` L ${scaleX(priceHistory.length - 1)} ${scaleY(minPrice)} L ${scaleX(0)} ${scaleY(minPrice)} Z`}
+        fill={isUp ? `${P.success}30` : `${P.danger}30`}
+      />
+
+      {/* Line */}
+      <path
+        d={linePath}
+        fill="none"
+        stroke={isUp ? P.success : P.danger}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Points */}
+      {priceHistory.map((p, i) => (
+        <circle
+          key={i}
+          cx={scaleX(i)}
+          cy={scaleY(p.price)}
+          r={3}
+          fill={P.card}
+          stroke={isUp ? P.success : P.danger}
+          strokeWidth={2}
+        />
+      ))}
+    </svg>
+  );
+}
+
 // Fee rates for platforms
 const PLATFORM_FEES = {
   ebay: { label: "eBay", rate: 0.13 },
@@ -676,7 +764,31 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   const totalPnL = realizedPnL + unrealizedPnL;
   const isUp = totalPnL >= 0;
 
-  const savePrice = () => { const v = Number(editPrice); if (!isNaN(v) && v >= 0) onUpdate({ ...item, currentPrice: v }); setEditingPrice(false); };
+  const [targetPrice, setTargetPrice] = useState(item.targetPrice ? String(item.targetPrice) : "");
+  const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const toast = useToast();
+
+  const savePrice = () => {
+    const v = Number(editPrice);
+    if (!isNaN(v) && v >= 0) {
+      // Add to price history
+      const historyEntry = { date: today(), price: v };
+      const newHistory = [...(item.priceHistory || []), historyEntry];
+      onUpdate({ ...item, currentPrice: v, priceHistory: newHistory });
+
+      // Check if target price alert should trigger
+      if (item.targetPrice && v >= item.targetPrice) {
+        toast?.success(`🎯 ${item.name} a atteint ton prix cible !`);
+      }
+    }
+    setEditingPrice(false);
+  };
+
+  const saveTargetPrice = () => {
+    const v = targetPrice ? Number(targetPrice) : null;
+    onUpdate({ ...item, targetPrice: v });
+    toast?.success(v ? `Alerte fixée à ${fmt(v)}` : "Alerte supprimée");
+  };
   const addTx = () => { if (!newTx.source || Number(newTx.price) <= 0) return; onUpdate({ ...item, transactions: [...item.transactions, { id: Date.now(), date: newTx.date, price: Number(newTx.price), quantity: Number(newTx.quantity), source: newTx.source }] }); setNewTx({ date: today(), price: "", quantity: "1", source: "" }); };
   const deleteTx = (id) => { const rem = item.transactions.filter((t) => t.id !== id); onUpdate(rem.length === 0 ? null : { ...item, transactions: rem }); };
   const saveTx = (id) => { if (!editTx.source || Number(editTx.price) <= 0) return; onUpdate({ ...item, transactions: item.transactions.map((t) => t.id === id ? { ...t, source: editTx.source, date: editTx.date, price: Number(editTx.price), quantity: Number(editTx.quantity) } : t) }); setEditingTxId(null); };
@@ -741,6 +853,54 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
         </div>
         {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.primary, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
       </div>
+
+      {/* Target Price Alert */}
+      <div style={{ background: "#fef3c7", borderRadius: 10, padding: "14px 16px", marginBottom: 18, border: "2px solid #f59e0b" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 18 }}>🎯</span>
+          <div style={{ fontSize: 11, color: "#92400e", fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase" }}>Alerte de prix</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="number"
+            placeholder="Prix cible..."
+            value={targetPrice}
+            onChange={(e) => setTargetPrice(e.target.value)}
+            style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1.5px solid #fbbf24", fontSize: 16, fontFamily: BODY_FONT, outline: "none", background: "#fff", color: P.text }}
+          />
+          <span style={{ fontSize: 15, color: "#92400e" }}>€</span>
+          <button onClick={saveTargetPrice} style={{ fontSize: 12, fontWeight: 600, color: "#fff", background: "#f59e0b", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: PIXEL_FONT }}>
+            {item.targetPrice ? "MAJ" : "SET"}
+          </button>
+        </div>
+        {item.targetPrice && (
+          <div style={{ marginTop: 8, fontSize: 14, fontFamily: BODY_FONT, color: "#92400e" }}>
+            Alerte active : {fmt(item.targetPrice)} ({item.currentPrice >= item.targetPrice ? "✅ Atteint !" : `${((item.targetPrice - item.currentPrice) / item.currentPrice * 100).toFixed(0)}% restant`})
+          </div>
+        )}
+      </div>
+
+      {/* Price History Chart */}
+      {item.priceHistory && item.priceHistory.length > 1 && (
+        <div style={{ background: "#f8fafc", borderRadius: 10, padding: "14px 16px", marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase" }}>Historique des prix</div>
+            <button onClick={() => setShowPriceHistory(!showPriceHistory)} style={{ fontSize: 12, color: P.primary, background: "none", border: "none", cursor: "pointer", fontFamily: BODY_FONT }}>
+              {showPriceHistory ? "Masquer" : "Voir graphique"}
+            </button>
+          </div>
+          {showPriceHistory && <ItemPriceChart priceHistory={item.priceHistory} />}
+          <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>
+            {item.priceHistory.length} mise{item.priceHistory.length > 1 ? "s" : ""} à jour
+            {item.priceHistory.length >= 2 && (() => {
+              const first = item.priceHistory[0].price;
+              const last = item.priceHistory[item.priceHistory.length - 1].price;
+              const change = ((last - first) / first * 100).toFixed(1);
+              return ` · ${change >= 0 ? "+" : ""}${change}% depuis le début`;
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Historique */}
       <div style={{ marginBottom: 18 }}>
@@ -1012,8 +1172,132 @@ function WalletTab({ items, setItems, events }) {
     }
   };
 
+  // Export to CSV
+  const exportCSV = () => {
+    const headers = ["Nom", "Type", "Quantité", "Prix Moyen", "Prix Actuel", "Valeur Totale", "P&L", "P&L %"];
+    const rows = items.map(item => [
+      item.name,
+      item.type,
+      totalQty(item),
+      avgPrice(item).toFixed(2),
+      item.currentPrice,
+      (item.currentPrice * totalQty(item)).toFixed(2),
+      getItemPnL(item).toFixed(2),
+      getItemPnLPct(item).toFixed(1) + "%"
+    ]);
+
+    const csvContent = [headers, ...rows].map(row => row.join(";")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `hexuo_portfolio_${today()}.csv`;
+    link.click();
+    toast?.success("Export CSV téléchargé !");
+  };
+
+  // Export to PDF (simple HTML-based)
+  const exportPDF = () => {
+    const printWindow = window.open("", "_blank");
+    const content = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Hexuo Portfolio - ${today()}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #5c6bc0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #5c6bc0; color: white; }
+          .positive { color: #16a34a; }
+          .negative { color: #dc2626; }
+          .summary { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>🎴 Hexuo Portfolio</h1>
+        <p>Exporté le ${new Date().toLocaleDateString("fr-FR")}</p>
+        <div class="summary">
+          <strong>Valeur totale:</strong> ${fmt(totalCur)}<br>
+          <strong>Investi:</strong> ${fmt(totalBuy)}<br>
+          <strong>P&L:</strong> <span class="${totalRealPnL >= 0 ? "positive" : "negative"}">${totalRealPnL >= 0 ? "+" : ""}${fmt(totalRealPnL)} (${totalPnLPct}%)</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Nom</th><th>Type</th><th>Qté</th><th>Prix Moy.</th><th>Prix Act.</th><th>Valeur</th><th>P&L</th></tr>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.type}</td>
+                <td>${totalQty(item)}</td>
+                <td>${fmt(avgPrice(item))}</td>
+                <td>${fmt(item.currentPrice)}</td>
+                <td>${fmt(item.currentPrice * totalQty(item))}</td>
+                <td class="${getItemPnL(item) >= 0 ? "positive" : "negative"}">${getItemPnL(item) >= 0 ? "+" : ""}${fmt(getItemPnL(item))} (${getItemPnLPct(item).toFixed(1)}%)</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <script>window.print();</script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
+    toast?.success("PDF prêt à imprimer !");
+  };
+
+  // View mode state
+  const [viewMode, setViewMode] = useState("list"); // list, grid
+  const [quickAdd, setQuickAdd] = useState({ show: false, name: "", price: "" });
+
+  // Quick add function
+  const handleQuickAdd = () => {
+    if (!quickAdd.name || Number(quickAdd.price) <= 0) {
+      toast?.error("Nom et prix requis");
+      return;
+    }
+    const newItem = {
+      id: Date.now(),
+      name: quickAdd.name,
+      type: "Bundle",
+      currentPrice: Number(quickAdd.price),
+      imageUrl: null,
+      priceHistory: [{ date: today(), price: Number(quickAdd.price) }],
+      transactions: [{
+        id: Date.now() + 1,
+        date: today(),
+        price: Number(quickAdd.price),
+        quantity: 1,
+        source: "Ajout rapide"
+      }]
+    };
+    setItems([...items, newItem]);
+    setQuickAdd({ show: false, name: "", price: "" });
+    toast?.success(`${quickAdd.name} ajouté !`);
+  };
+
   return (
     <div>
+      {/* Action bar */}
+      {items.length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <button onClick={exportCSV} style={{ padding: "8px 14px", border: `2px solid ${P.borderLight}`, borderRadius: 8, background: P.card, color: P.text, fontSize: 14, fontFamily: BODY_FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            📊 Export CSV
+          </button>
+          <button onClick={exportPDF} style={{ padding: "8px 14px", border: `2px solid ${P.borderLight}`, borderRadius: 8, background: P.card, color: P.text, fontSize: 14, fontFamily: BODY_FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            📄 Export PDF
+          </button>
+          <div style={{ flex: 1 }} />
+          <div style={{ display: "flex", border: `2px solid ${P.borderLight}`, borderRadius: 8, overflow: "hidden" }}>
+            <button onClick={() => setViewMode("list")} style={{ padding: "8px 12px", border: "none", background: viewMode === "list" ? P.primary : P.card, color: viewMode === "list" ? "#fff" : P.text, cursor: "pointer", fontSize: 14 }}>☰</button>
+            <button onClick={() => setViewMode("grid")} style={{ padding: "8px 12px", border: "none", background: viewMode === "grid" ? P.primary : P.card, color: viewMode === "grid" ? "#fff" : P.text, cursor: "pointer", fontSize: 14 }}>▦</button>
+          </div>
+        </div>
+      )}
+
       {/* RETRO OVERVIEW CARD - Game Boy style */}
       <div style={{
         background: P.primary,
@@ -1194,8 +1478,54 @@ function WalletTab({ items, setItems, events }) {
         </Card>
       )}
 
-      {/* Items list */}
-      <div style={{
+      {/* Items - List or Grid view */}
+      {viewMode === "grid" ? (
+        /* GRID VIEW - Showcase mode */
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gap: 12,
+          marginBottom: 18
+        }}>
+          {filteredItems.map((item) => {
+            const realPnL = getItemPnL(item);
+            const isUp = realPnL >= 0;
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedId(item.id)}
+                style={{
+                  background: P.card,
+                  border: `2px solid ${P.borderLight}`,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              >
+                {/* Image */}
+                <div style={{ width: "100%", aspectRatio: "1", background: P.bg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => e.target.style.display = "none"} />
+                  ) : (
+                    <Pokeball size={48} />
+                  )}
+                </div>
+                {/* Info */}
+                <div style={{ padding: "10px 12px" }}>
+                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: P.text, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
+                  <div style={{ fontSize: 16, fontFamily: BODY_FONT, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div>
+                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: isUp ? P.success : P.danger }}>{isUp ? "+" : ""}{getItemPnLPct(item).toFixed(1)}%</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* LIST VIEW */
+        <div style={{
           display: "flex",
           flexDirection: "column",
           gap: 10,
@@ -1258,6 +1588,18 @@ function WalletTab({ items, setItems, events }) {
                           {isFullySold ? "VENDU" : `${soldQty}/${totalQty(item)}`}
                         </span>
                       )}
+                      {item.targetPrice && (
+                        <span style={{
+                          fontSize: 8,
+                          fontFamily: PIXEL_FONT,
+                          background: item.currentPrice >= item.targetPrice ? P.success : P.warning,
+                          color: "#fff",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                        }}>
+                          🎯 {item.currentPrice >= item.targetPrice ? "ATTEINT" : fmt(item.targetPrice)}
+                        </span>
+                      )}
                     </div>
                     <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.success : P.danger} />
                     <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft, marginTop: 6 }}>{totalQty(item)} unite{totalQty(item) > 1 ? "s" : ""} - moy. {fmt(avgPrice(item))}</div>
@@ -1278,6 +1620,7 @@ function WalletTab({ items, setItems, events }) {
             );
           })}
         </div>
+      )}
 
       {/* Donut */}
       {items.length > 1 && (
@@ -1365,6 +1708,123 @@ function WalletTab({ items, setItems, events }) {
       )}
 
       {selectedItem && <ItemDetailModal item={selectedItem} onClose={() => setSelectedId(null)} onUpdate={handleItemUpdate} />}
+
+      {/* Quick Add Floating Button */}
+      <button
+        onClick={() => setQuickAdd({ ...quickAdd, show: true })}
+        style={{
+          position: "fixed",
+          bottom: 100,
+          right: 20,
+          width: 60,
+          height: 60,
+          borderRadius: "50%",
+          background: `linear-gradient(135deg, ${P.primary} 0%, #4a5ab8 100%)`,
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          cursor: "pointer",
+          boxShadow: "0 4px 20px rgba(92, 107, 192, 0.4)",
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        ⚡
+      </button>
+
+      {/* Quick Add Modal */}
+      {quickAdd.show && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 200,
+          padding: 20,
+        }} onClick={() => setQuickAdd({ ...quickAdd, show: false })}>
+          <div style={{
+            background: P.card,
+            borderRadius: 16,
+            padding: 24,
+            width: "100%",
+            maxWidth: 320,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <span style={{ fontSize: 24 }}>⚡</span>
+              <div style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: P.text, letterSpacing: 1 }}>AJOUT RAPIDE</div>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Nom du produit..."
+              value={quickAdd.name}
+              onChange={(e) => setQuickAdd({ ...quickAdd, name: e.target.value })}
+              autoFocus
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 10,
+                fontSize: 18,
+                fontFamily: BODY_FONT,
+                marginBottom: 12,
+                outline: "none",
+                boxSizing: "border-box",
+                background: P.bg,
+                color: P.text,
+              }}
+              onKeyDown={(e) => e.key === "Enter" && document.getElementById("quick-price")?.focus()}
+            />
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <input
+                id="quick-price"
+                type="number"
+                placeholder="Prix €"
+                value={quickAdd.price}
+                onChange={(e) => setQuickAdd({ ...quickAdd, price: e.target.value })}
+                style={{
+                  flex: 1,
+                  padding: "14px 16px",
+                  border: `2px solid ${P.borderLight}`,
+                  borderRadius: 10,
+                  fontSize: 18,
+                  fontFamily: BODY_FONT,
+                  outline: "none",
+                  boxSizing: "border-box",
+                  background: P.bg,
+                  color: P.text,
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
+              />
+              <span style={{ fontSize: 24, color: P.soft, alignSelf: "center" }}>€</span>
+            </div>
+
+            <button
+              onClick={handleQuickAdd}
+              style={{
+                width: "100%",
+                padding: "14px",
+                border: "none",
+                borderRadius: 10,
+                background: P.primary,
+                color: "#fff",
+                fontSize: 14,
+                fontFamily: PIXEL_FONT,
+                cursor: "pointer",
+                letterSpacing: 1,
+              }}
+            >
+              AJOUTER
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1414,7 +1874,69 @@ function CalendarTab({ events, setEvents }) {
   const [gridMonth, setGridMonth] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [dayPopover, setDayPopover] = useState(null); // date string "YYYY-MM-DD" or null
   const [selectedDate, setSelectedDate] = useState(null); // date string "YYYY-MM-DD" for visual selection
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    return typeof window !== "undefined" && Notification.permission === "granted";
+  });
   const todayStr = today();
+  const toast = useToast();
+
+  // Request notification permission
+  const enableNotifications = async () => {
+    if (!("Notification" in window)) {
+      toast?.error("Notifications non supportées par ce navigateur");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotificationsEnabled(true);
+      toast?.success("Notifications activées !");
+      // Show test notification
+      new Notification("🎴 Hexuo", { body: "Les rappels de sorties sont activés !" });
+    } else {
+      toast?.error("Permission refusée");
+    }
+  };
+
+  // Check for upcoming releases and notify
+  useEffect(() => {
+    if (!notificationsEnabled) return;
+
+    const checkUpcoming = () => {
+      const now = new Date();
+      const todayDate = now.toISOString().split("T")[0];
+
+      events.forEach(ev => {
+        if (ev.type !== "release") return;
+        const eventDate = new Date(ev.date + "T10:00:00");
+        const daysUntil = Math.round((eventDate - now) / 86400000);
+
+        // Notify 7 days before, 1 day before, and on the day
+        if (daysUntil === 7 || daysUntil === 1 || daysUntil === 0) {
+          const notifKey = `hexuo-notif-${ev.id}-${daysUntil}`;
+          if (!localStorage.getItem(notifKey)) {
+            localStorage.setItem(notifKey, "1");
+            const message = daysUntil === 0
+              ? `📦 ${ev.title} sort aujourd'hui !`
+              : `📦 ${ev.title} dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""} !`;
+            new Notification("🎴 Hexuo - Rappel", { body: message });
+          }
+        }
+      });
+    };
+
+    checkUpcoming();
+    const interval = setInterval(checkUpcoming, 3600000); // Check every hour
+    return () => clearInterval(interval);
+  }, [events, notificationsEnabled]);
+
+  // Upcoming releases (next 30 days)
+  const upcomingReleases = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(ev => ev.type === "release" && new Date(ev.date + "T12:00:00") >= now)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 5);
+  }, [events]);
 
   const save = (ev) => {
     if (editEvent) setEvents(events.map((e) => (e.id === ev.id ? ev : e)));
@@ -1637,6 +2159,61 @@ function CalendarTab({ events, setEvents }) {
 
   return (
     <div>
+      {/* Notifications & Upcoming releases */}
+      <Card style={{ marginBottom: 20, background: notificationsEnabled ? "#f0fdf4" : "#fef3c7", border: notificationsEnabled ? "2px solid #86efac" : "2px solid #fcd34d" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 20 }}>{notificationsEnabled ? "🔔" : "🔕"}</span>
+              <div style={{ fontSize: 10, fontFamily: PIXEL_FONT, color: notificationsEnabled ? "#166534" : "#92400e", letterSpacing: 1 }}>
+                {notificationsEnabled ? "RAPPELS ACTIFS" : "RAPPELS DESACTIVES"}
+              </div>
+            </div>
+            <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.text }}>
+              {notificationsEnabled
+                ? "Tu recevras des notifications 7j et 1j avant chaque sortie"
+                : "Active les notifications pour ne rien rater !"}
+            </div>
+          </div>
+          {!notificationsEnabled && (
+            <button onClick={enableNotifications} style={{
+              padding: "10px 16px",
+              border: "none",
+              borderRadius: 8,
+              background: "#f59e0b",
+              color: "#fff",
+              fontSize: 10,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 1,
+            }}>
+              ACTIVER
+            </button>
+          )}
+        </div>
+      </Card>
+
+      {/* Upcoming releases preview */}
+      {upcomingReleases.length > 0 && (
+        <Card style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 10, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 12, letterSpacing: 1 }}>📦 PROCHAINES SORTIES</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {upcomingReleases.map(ev => {
+              const days = Math.round((new Date(ev.date + "T12:00:00") - new Date(todayStr + "T12:00:00")) / 86400000);
+              return (
+                <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: P.bg, borderRadius: 8 }}>
+                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: P.primary, minWidth: 60 }}>
+                    {days === 0 ? "Aujourd'hui" : days === 1 ? "Demain" : `J-${days}`}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 16, fontFamily: BODY_FONT, color: P.text }}>{ev.title}</div>
+                  <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft }}>{fmtDate(ev.date)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       {/* View toggle - Retro style */}
       <div style={{ display: "flex", gap: 0, marginBottom: 20, border: `3px solid ${P.border}` }}>
         {[{ id: "list", label: "LISTE" }, { id: "grid", label: "CALENDRIER" }].map((v, idx) => (
@@ -2393,6 +2970,7 @@ function AppContent() {
   const [events, setEvents] = useState(INIT.events);
   const [spots, setSpots] = useState(INIT.spots);
   const [resources, setResources] = useState(INIT.resources);
+  const [wishlist, setWishlist] = useState(INIT.wishlist);
   const [loaded, setLoaded] = useState(false);
   const isDesktop = useIsDesktop();
 
@@ -2430,6 +3008,9 @@ function AppContent() {
           currentPrice: Number(i.current_price) || 0,
           transactions: i.transactions || [],
           sold: i.sold || [],
+          priceHistory: i.price_history || [],
+          targetPrice: i.target_price ? Number(i.target_price) : null,
+          imageUrl: i.image_url || null,
         })));
       }
 
@@ -2510,6 +3091,9 @@ function AppContent() {
           current_price: item.currentPrice,
           transactions: item.transactions,
           sold: item.sold || [],
+          price_history: item.priceHistory || [],
+          target_price: item.targetPrice || null,
+          image_url: item.imageUrl || null,
         }).eq("id", item.id);
       } else {
         const { data } = await supabase.from("items").insert({
@@ -2519,6 +3103,9 @@ function AppContent() {
           current_price: item.currentPrice,
           transactions: item.transactions,
           sold: item.sold || [],
+          price_history: item.priceHistory || [],
+          target_price: item.targetPrice || null,
+          image_url: item.imageUrl || null,
         }).select().single();
         if (data) {
           // Update local id with DB id
