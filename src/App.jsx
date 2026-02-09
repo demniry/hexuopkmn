@@ -2,55 +2,43 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./supabase";
 
 // ═══════════════════════════════════════════════════════════
-// POKÉMON 1G RETRO PALETTE & PIXEL ART THEME
+// MODERN PIXEL ART THEME - Soft & Clean
 // ═══════════════════════════════════════════════════════════
 const P = {
-  // Main colors - Game Boy inspired
-  bg: "#f0e6c8",           // Parchment/cream background
-  card: "#fffef5",         // Light cream cards
-  shadow: "none",          // Pixel art = no soft shadows
+  // Base - Clean modern background
+  bg: "#f8f9fa",             // Light gray, clean
+  card: "#ffffff",           // Pure white cards
+  shadow: "0 2px 8px rgba(0,0,0,0.06)", // Subtle modern shadow
 
-  // Pokemon colors
-  red: "#e53935",          // Pokemon Red
-  blue: "#1e88e5",         // Pokemon Blue
-  yellow: "#fdd835",       // Pikachu yellow
-  green: "#43a047",        // Pokemon Leaf Green
+  // Accent colors - Muted & sophisticated
+  primary: "#5c6bc0",        // Soft indigo
+  secondary: "#78909c",      // Blue gray
+  success: "#66bb6a",        // Soft green
+  warning: "#ffb74d",        // Soft amber
+  danger: "#ef5350",         // Soft red
 
   // UI colors
-  text: "#2d3436",         // Dark text
-  soft: "#636e72",         // Muted text
-  accent: "#e53935",       // Red accent (Pokemon Red)
-  danger: "#c62828",
+  text: "#37474f",           // Dark blue-gray
+  soft: "#90a4ae",           // Muted text
+  accent: "#5c6bc0",         // Indigo accent
 
-  // Retro specific
-  border: "#2d3436",       // Dark pixel borders
-  borderLight: "#b2bec3",  // Light borders
-  wood: "#8d6e63",         // Shelf wood color
-  woodDark: "#5d4037",     // Shelf shadow
-  woodLight: "#a1887f",    // Shelf highlight
+  // Borders - Softer
+  border: "#455a64",         // Dark but not black
+  borderLight: "#cfd8dc",    // Light border
 };
 
 // Pixel font family
 const PIXEL_FONT = "'Press Start 2P', monospace";
 const BODY_FONT = "'VT323', monospace";
 
-// Pixel border style (Game Boy menu look)
-const pixelBorder = (color = P.border, width = 3) => ({
+// Modern pixel border - softer with slight radius
+const pixelBorder = (color = P.border, width = 2) => ({
   border: `${width}px solid ${color}`,
-  boxShadow: `
-    ${width}px 0 0 0 ${color},
-    -${width}px 0 0 0 ${color},
-    0 ${width}px 0 0 ${color},
-    0 -${width}px 0 0 ${color},
-    ${width}px ${width}px 0 0 ${color},
-    -${width}px ${width}px 0 0 ${color},
-    ${width}px -${width}px 0 0 ${color},
-    -${width}px -${width}px 0 0 ${color}
-  `,
+  borderRadius: 4,
 });
 
 // Retro button style
-const retroButtonStyle = (isActive = false, color = P.red) => ({
+const retroButtonStyle = (isActive = false, color = P.primary) => ({
   padding: "10px 16px",
   border: `3px solid ${P.border}`,
   borderRadius: 0,
@@ -116,7 +104,7 @@ function Pokeball({ size = 24, style: extra }) {
       <path d="M 2 50 H 98" stroke={P.border} strokeWidth="4"/>
       <circle cx="50" cy="50" r="16" fill="#fff" stroke={P.border} strokeWidth="4"/>
       <circle cx="50" cy="50" r="8" fill={P.border}/>
-      <path d="M 2 50 A 48 48 0 0 0 98 50" fill={P.red}/>
+      <path d="M 2 50 A 48 48 0 0 0 98 50" fill={P.primary}/>
     </svg>
   );
 }
@@ -128,7 +116,7 @@ function PixelSparkle({ style }) {
       position: "absolute",
       width: 8,
       height: 8,
-      background: P.yellow,
+      background: P.warning,
       animation: "sparkle 0.6s ease-in-out infinite",
       ...style
     }} />
@@ -161,8 +149,8 @@ function Input({ label, type, placeholder, value, onChange, style: extraStyle })
           background: P.card,
           color: P.text
         }}
-        onFocus={(e) => (e.target.style.borderColor = P.red)}
-        onBlur={(e) => (e.target.style.borderColor = P.border)}
+        onFocus={(e) => (e.target.style.borderColor = P.primary)}
+        onBlur={(e) => (e.target.style.borderColor = P.borderLight)}
       />
     </div>
   );
@@ -184,8 +172,8 @@ function AddButton({ onClick }) {
         textTransform: "uppercase",
         letterSpacing: 1,
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.red; e.currentTarget.style.color = P.red; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.text; }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.primary; e.currentTarget.style.color = P.primary; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = P.borderLight; e.currentTarget.style.color = P.soft; }}
     >+ Ajouter</button>
   );
 }
@@ -195,15 +183,16 @@ function Card({ children, onClick, style: extra }) {
     <div onClick={onClick}
       style={{
         background: P.card,
-        border: `3px solid ${P.border}`,
-        borderRadius: 0,
+        border: `2px solid ${P.borderLight}`,
+        borderRadius: 8,
         padding: "16px 18px",
         cursor: onClick ? "pointer" : "default",
-        boxShadow: "4px 4px 0 rgba(0,0,0,0.2)",
+        boxShadow: P.shadow,
+        transition: "all 0.15s ease",
         ...extra
       }}
-      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translate(-2px, -2px)"; e.currentTarget.style.boxShadow = "6px 6px 0 rgba(0,0,0,0.25)"; }}}
-      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translate(0, 0)"; e.currentTarget.style.boxShadow = "4px 4px 0 rgba(0,0,0,0.2)"; }}}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; e.currentTarget.style.borderColor = P.primary; }}}
+      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = P.shadow; e.currentTarget.style.borderColor = P.borderLight; }}}
     >{children}</div>
   );
 }
@@ -215,34 +204,30 @@ function Modal({ onClose, children, title }) {
     <div
       style={{
         position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.7)",
+        background: "rgba(55, 71, 79, 0.6)",
+        backdropFilter: "blur(4px)",
         zIndex: 100,
         display: "flex",
         alignItems: isDesktop ? "center" : "flex-end",
         justifyContent: "center",
         padding: isDesktop ? 20 : 0,
-        imageRendering: "pixelated",
       }}
       onClick={onClose}
     >
       <div
         style={{
           background: P.card,
-          border: `4px solid ${P.border}`,
-          borderRadius: 0,
+          border: `2px solid ${P.borderLight}`,
+          borderRadius: isDesktop ? 12 : "16px 16px 0 0",
           width: "100%",
           maxWidth: isDesktop ? 520 : 560,
           maxHeight: isDesktop ? "85vh" : "90vh",
           overflowY: "auto",
           padding: isDesktop ? "24px 28px" : "20px 20px 100px",
-          boxShadow: "8px 8px 0 rgba(0,0,0,0.3)",
-          position: "relative",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Decorative corner pixels */}
-        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.red }} />
-        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.blue }} />
         {children}
       </div>
     </div>
@@ -257,7 +242,7 @@ function Stars({ rating, max = 5 }) {
   return (
     <span style={{ fontSize: 14, letterSpacing: 4, fontFamily: PIXEL_FONT }}>
       {Array(max).fill(0).map((_, i) => (
-        <span key={i} style={{ color: i < rating ? P.yellow : P.borderLight }}>*</span>
+        <span key={i} style={{ color: i < rating ? P.warning : P.borderLight }}>*</span>
       ))}
     </span>
   );
@@ -305,10 +290,10 @@ const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((i
 
 function TypeBadge({ type }) {
   const map = {
-    "Ultra Premium Collection": { bg: P.yellow, text: P.border, icon: "UPC" },
-    "Bundle": { bg: P.blue, text: "#fff", icon: "BDL" },
-    "Elite Trainer Box": { bg: P.red, text: "#fff", icon: "ETB" },
-    "Collection Box": { bg: P.green, text: "#fff", icon: "BOX" }
+    "Ultra Premium Collection": { bg: P.warning, text: P.border, icon: "UPC" },
+    "Bundle": { bg: P.primary, text: "#fff", icon: "BDL" },
+    "Elite Trainer Box": { bg: P.danger, text: "#fff", icon: "ETB" },
+    "Collection Box": { bg: P.success, text: "#fff", icon: "BOX" }
   };
   const c = map[type] || { bg: P.borderLight, text: P.text, icon: "???" };
   return (
@@ -338,7 +323,7 @@ function MiniBar({ value, max, color }) {
 function DonutChart({ items }) {
   const total = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
   if (total === 0) return null;
-  const colors = [P.red, P.blue, P.green, P.yellow, "#9c27b0", "#e91e63", "#00bcd4", "#ff5722"];
+  const colors = [P.danger, P.primary, P.success, P.warning, "#9c27b0", "#e91e63", "#00bcd4", "#ff5722"];
 
   // Pixel-style bar chart instead of donut
   return (
@@ -458,12 +443,12 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
               <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} autoFocus onKeyDown={(e) => { if (e.key === "Enter") savePrice(); }}
                 style={{ width: 90, padding: "6px 10px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 18, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               <span style={{ fontSize: 15, color: P.soft }}>€</span>
-              <button onClick={savePrice} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+              <button onClick={savePrice} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: P.primary, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
               <button onClick={() => setEditingPrice(false)} style={{ fontSize: 14, color: P.soft, background: "transparent", border: "none", cursor: "pointer" }}>✕</button>
             </div>
           )}
         </div>
-        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.a1, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
+        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.primary, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
       </div>
 
       {/* Historique */}
@@ -484,7 +469,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => saveTx(tx.id)} style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#fff", background: P.a1, border: "none", borderRadius: 8, padding: "8px 0", cursor: "pointer", fontFamily: "inherit" }}>Sauvegarder</button>
+                    <button onClick={() => saveTx(tx.id)} style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#fff", background: P.primary, border: "none", borderRadius: 8, padding: "8px 0", cursor: "pointer", fontFamily: "inherit" }}>Sauvegarder</button>
                     <button onClick={() => setEditingTxId(null)} style={{ fontSize: 13, color: P.soft, background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
                     <button onClick={() => deleteTx(tx.id)} style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>Supprimer</button>
                   </div>
@@ -586,126 +571,9 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// PIXEL ART SHELF COMPONENT
-// ═══════════════════════════════════════════════════════════
-function PixelBooster({ type, name, onClick }) {
-  // Different colors for different types
-  const colors = {
-    "Ultra Premium Collection": { main: P.yellow, accent: P.border, label: "UPC" },
-    "Bundle": { main: P.blue, accent: "#fff", label: "BDL" },
-    "Elite Trainer Box": { main: P.red, accent: "#fff", label: "ETB" },
-    "Collection Box": { main: P.green, accent: "#fff", label: "BOX" },
-  };
-  const c = colors[type] || { main: P.borderLight, accent: P.text, label: "???" };
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        width: 50,
-        height: 70,
-        background: c.main,
-        border: `3px solid ${P.border}`,
-        position: "relative",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "2px 2px 0 rgba(0,0,0,0.2)",
-      }}
-    >
-      {/* Pokeball icon */}
-      <div style={{
-        width: 20,
-        height: 20,
-        borderRadius: "50%",
-        background: "#fff",
-        border: `2px solid ${P.border}`,
-        marginBottom: 4,
-      }}>
-        <div style={{ width: "100%", height: "50%", background: c.main, borderRadius: "10px 10px 0 0" }} />
-      </div>
-      {/* Type label */}
-      <div style={{
-        fontSize: 6,
-        fontFamily: PIXEL_FONT,
-        color: c.accent,
-        textAlign: "center",
-        letterSpacing: 0.5,
-      }}>{c.label}</div>
-    </div>
-  );
-}
-
-function PixelShelf({ items, onItemClick }) {
-  // Group items into shelves of 5
-  const itemsPerShelf = 5;
-  const shelves = [];
-  for (let i = 0; i < items.length; i += itemsPerShelf) {
-    shelves.push(items.slice(i, i + itemsPerShelf));
-  }
-
-  if (items.length === 0) return null;
-
-  return (
-    <div style={{
-      background: P.card,
-      border: `4px solid ${P.border}`,
-      padding: 16,
-      marginBottom: 20,
-      boxShadow: "6px 6px 0 rgba(0,0,0,0.2)",
-    }}>
-      <div style={{
-        fontSize: 10,
-        fontFamily: PIXEL_FONT,
-        color: P.text,
-        marginBottom: 16,
-        letterSpacing: 1,
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-      }}>
-        <span style={{ color: P.red }}>*</span> MA COLLECTION <span style={{ color: P.blue }}>*</span>
-      </div>
-
-      {shelves.map((shelfItems, shelfIdx) => (
-        <div key={shelfIdx} style={{ marginBottom: shelfIdx < shelves.length - 1 ? 8 : 0 }}>
-          {/* Items on shelf */}
-          <div style={{
-            display: "flex",
-            justifyContent: "flex-start",
-            gap: 8,
-            paddingBottom: 8,
-          }}>
-            {shelfItems.map((item) => (
-              <PixelBooster
-                key={item.id}
-                type={item.type}
-                name={item.name}
-                onClick={() => onItemClick(item.id)}
-              />
-            ))}
-          </div>
-          {/* Wooden shelf */}
-          <div style={{
-            height: 12,
-            background: `linear-gradient(180deg, ${P.wood} 0%, ${P.woodDark} 50%, ${P.wood} 100%)`,
-            border: `3px solid ${P.border}`,
-            borderTop: "none",
-            boxShadow: "inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 0 rgba(0,0,0,0.2)",
-          }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [viewMode, setViewMode] = useState("shelf"); // "shelf" | "list"
   const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
   const isDesktop = useIsDesktop();
@@ -767,7 +635,7 @@ function WalletTab({ items, setItems, events }) {
     <div>
       {/* RETRO OVERVIEW CARD - Game Boy style */}
       <div style={{
-        background: P.blue,
+        background: P.primary,
         border: `4px solid ${P.border}`,
         padding: "20px",
         color: "#fff",
@@ -776,14 +644,14 @@ function WalletTab({ items, setItems, events }) {
         position: "relative",
       }}>
         {/* Corner decorations */}
-        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.yellow }} />
-        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.yellow }} />
+        <div style={{ position: "absolute", top: 8, left: 8, width: 8, height: 8, background: P.warning }} />
+        <div style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, background: P.warning }} />
 
         <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>VALEUR TOTALE</div>
         <div style={{ fontSize: 32, fontFamily: BODY_FONT, fontWeight: 700 }}>{fmt(totalCur)}</div>
         <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{
-            background: totalRealPnL >= 0 ? P.green : P.red,
+            background: totalRealPnL >= 0 ? P.success : P.danger,
             color: "#fff",
             padding: "8px 12px",
             border: `2px solid ${P.border}`,
@@ -801,8 +669,8 @@ function WalletTab({ items, setItems, events }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
         {[
           { label: "ITEMS", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text, bg: P.card },
-          { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.green },
-          { label: "PERTE", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#fff", bg: P.red },
+          { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.success },
+          { label: "PERTE", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#fff", bg: P.danger },
         ].map((s) => (
           <div key={s.label} style={{
             background: s.bg,
@@ -826,63 +694,28 @@ function WalletTab({ items, setItems, events }) {
               <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                 <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>MEILLEUR</div>
                 <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.green }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.success }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
               </div>
             )}
             {worstItem && getItemPnLPct(worstItem) < 0 && (
               <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                 <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>PIRE</div>
                 <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.red }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.danger }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
               </div>
             )}
             {hasAnySales && (
               <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                 <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>P&L REALISE</div>
-                <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: realizedPnL >= 0 ? P.green : P.red }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+                <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: realizedPnL >= 0 ? P.success : P.danger }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
               </div>
             )}
           </div>
         </Card>
       )}
 
-      {/* VIEW MODE TOGGLE */}
-      {items.length > 0 && (
-        <div style={{ display: "flex", gap: 0, marginBottom: 16, border: `3px solid ${P.border}` }}>
-          {[
-            { id: "shelf", label: "ETAGERE" },
-            { id: "list", label: "LISTE" },
-          ].map((v, idx) => (
-            <button
-              key={v.id}
-              onClick={() => setViewMode(v.id)}
-              style={{
-                flex: 1,
-                padding: "10px",
-                border: "none",
-                borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
-                background: viewMode === v.id ? P.yellow : P.card,
-                color: P.text,
-                fontSize: 8,
-                fontFamily: PIXEL_FONT,
-                cursor: "pointer",
-                letterSpacing: 1,
-              }}
-            >
-              {viewMode === v.id && "* "}{v.label}{viewMode === v.id && " *"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* SHELF VIEW */}
-      {viewMode === "shelf" && (
-        <PixelShelf items={items} onItemClick={setSelectedId} />
-      )}
-
-      {/* LIST VIEW - Items */}
-      {viewMode === "list" && (
-        <div style={{
+      {/* Items list */}
+      <div style={{
           display: "flex",
           flexDirection: "column",
           gap: 10,
@@ -907,7 +740,7 @@ function WalletTab({ items, setItems, events }) {
                         <span style={{
                           fontSize: 8,
                           fontFamily: PIXEL_FONT,
-                          background: isFullySold ? P.green : P.yellow,
+                          background: isFullySold ? P.success : P.warning,
                           color: isFullySold ? "#fff" : P.text,
                           padding: "4px 8px",
                           border: `2px solid ${P.border}`,
@@ -916,7 +749,7 @@ function WalletTab({ items, setItems, events }) {
                         </span>
                       )}
                     </div>
-                    <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.green : P.red} />
+                    <MiniBar value={item.currentPrice * totalQty(item)} max={maxVal} color={isUp ? P.success : P.danger} />
                     <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft, marginTop: 6 }}>{totalQty(item)} unite{totalQty(item) > 1 ? "s" : ""} - moy. {fmt(avgPrice(item))}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -925,7 +758,7 @@ function WalletTab({ items, setItems, events }) {
                       fontSize: 16,
                       fontFamily: BODY_FONT,
                       fontWeight: 700,
-                      color: isUp ? P.green : P.red,
+                      color: isUp ? P.success : P.danger,
                       marginTop: 4
                     }}>{isUp ? "+" : ""}{realPnLPct.toFixed(1)}%</div>
                   </div>
@@ -935,7 +768,6 @@ function WalletTab({ items, setItems, events }) {
             );
           })}
         </div>
-      )}
 
       {/* Donut */}
       {items.length > 1 && (
@@ -957,11 +789,11 @@ function WalletTab({ items, setItems, events }) {
               <div style={{ maxHeight: 180, overflowY: "auto", background: "#f8fafc", borderRadius: 12, padding: 10 }}>
                 {Object.entries(releasesByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearEvents]) => (
                   <div key={year} style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: P.a1, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: P.a1 }} />
+                    <div style={{ fontSize: 10, fontWeight: 700, color: P.primary, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: P.primary }} />
                       {year}
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 14, borderLeft: `2px solid ${P.a1}20`, marginLeft: 3 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 14, borderLeft: `2px solid ${P.primary}20`, marginLeft: 3 }}>
                       {yearEvents.map((ev) => {
                         const d = new Date(ev.date + "T12:00:00");
                         const monthLabel = d.toLocaleDateString("fr-FR", { month: "short" });
@@ -976,17 +808,17 @@ function WalletTab({ items, setItems, events }) {
                             style={{
                               display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8,
                               background: isSelected ? "#f1f5f9" : "transparent",
-                              border: isSelected ? `1.5px solid ${P.a1}` : "1.5px solid transparent",
+                              border: isSelected ? `1.5px solid ${P.primary}` : "1.5px solid transparent",
                               cursor: "pointer", transition: "all 0.15s"
                             }}
                             onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f1f5f9"; }}
                             onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                           >
-                            <span style={{ fontSize: 9, fontWeight: 600, color: P.a1, background: "#f1f5f9", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: P.primary, background: "#f1f5f9", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
                             <span style={{ fontSize: 11, fontWeight: 500, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {ev.title.replace(/^Sortie:\s*/i, "")}
                             </span>
-                            {isSelected && <span style={{ fontSize: 10, color: P.a1 }}>✓</span>}
+                            {isSelected && <span style={{ fontSize: 10, color: P.primary }}>✓</span>}
                           </div>
                         );
                       })}
@@ -1097,7 +929,7 @@ function CalendarTab({ events, setEvents }) {
     <div>
       {Object.entries(grouped).map(([monthKey, monthEvents]) => (
         <div key={monthKey} style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: P.a1, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>{monthLabel(monthKey)}</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: P.primary, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>{monthLabel(monthKey)}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {monthEvents.map((ev) => {
               const t = EVENT_TYPES[ev.type];
@@ -1175,9 +1007,9 @@ function CalendarTab({ events, setEvents }) {
       <div>
         {/* Month navigator */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <button onClick={prevMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.a1, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>‹</button>
+          <button onClick={prevMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.primary, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>‹</button>
           <div style={{ fontSize: 17, fontWeight: 700, color: P.text }}>{mLabelCap}</div>
-          <button onClick={nextMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.a1, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>›</button>
+          <button onClick={nextMonth} style={{ background: "none", border: "none", fontSize: 24, color: P.primary, cursor: "pointer", padding: "6px 12px", borderRadius: 10 }}>›</button>
         </div>
 
         {/* Weekday headers */}
@@ -1206,7 +1038,7 @@ function CalendarTab({ events, setEvents }) {
                   minHeight: 80, display: "flex", flexDirection: "column", alignItems: "stretch",
                   borderRadius: 10,
                   background: isSelected ? "#f1f5f9" : "transparent",
-                  border: isSelected ? `2px solid ${P.a1}` : "2px solid transparent",
+                  border: isSelected ? `2px solid ${P.primary}` : "2px solid transparent",
                   cursor: "pointer",
                   position: "relative", transition: "all 0.15s",
                   padding: 5,
@@ -1217,7 +1049,7 @@ function CalendarTab({ events, setEvents }) {
                 <div style={{
                   fontSize: 14, fontWeight: isToday ? 700 : 500,
                   color: isToday ? "#fff" : P.text,
-                  background: isToday ? P.a1 : "transparent",
+                  background: isToday ? P.primary : "transparent",
                   borderRadius: 7,
                   width: 26, height: 26,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -1232,7 +1064,7 @@ function CalendarTab({ events, setEvents }) {
                         <div key={idx} style={{
                           fontSize: 9, fontWeight: 600,
                           background: t?.bg || "#f1f5f9",
-                          color: t?.color || P.a1,
+                          color: t?.color || P.primary,
                           padding: "3px 5px",
                           borderRadius: 5,
                           whiteSpace: "nowrap",
@@ -1298,7 +1130,7 @@ function CalendarTab({ events, setEvents }) {
               padding: "12px 8px",
               border: "none",
               borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
-              background: view === v.id ? P.yellow : P.card,
+              background: view === v.id ? P.warning : P.card,
               color: P.text,
               fontSize: 8,
               fontFamily: PIXEL_FONT,
@@ -1364,7 +1196,7 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
         <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Commentaire</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions..." rows={3}
           style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
-          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
+          onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
@@ -1409,7 +1241,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
           <div style={{ marginTop: 6 }}><Stars rating={spot.rating} /></div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onEdit} style={{ background: "#f1f5f9", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 600, color: P.a1, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
+          <button onClick={onEdit} style={{ background: "#f1f5f9", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 600, color: P.primary, cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
         </div>
       </div>
@@ -1438,7 +1270,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px 16px" }}>
               <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Total dépensé</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: P.a1 }}>{fmt(totalSpent)}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: P.primary }}>{fmt(totalSpent)}</div>
             </div>
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px 16px" }}>
               <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Achats</div>
@@ -1503,7 +1335,7 @@ function SpotsTab({ spots, setSpots, items }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, background: t.bg, color: t.color, padding: "4px 10px", borderRadius: 8 }}>{t.icon} {t.label}</span>
-                    {count > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: "#f1f5f9", color: P.a1, padding: "3px 8px", borderRadius: 6 }}>{count} achat{count > 1 ? "s" : ""}</span>}
+                    {count > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: "#f1f5f9", color: P.primary, padding: "3px 8px", borderRadius: 6 }}>{count} achat{count > 1 ? "s" : ""}</span>}
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: P.text }}>{sp.name}</div>
                   <div style={{ marginTop: 5 }}><Stars rating={sp.rating} /></div>
@@ -1567,7 +1399,7 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
         <label style={{ fontSize: 13, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Note (optionnel)</label>
         <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Tes impressions, points clés..." rows={3}
           style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
-          onFocus={(e) => (e.target.style.borderColor = P.a1)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
+          onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
     </BottomModal>
@@ -1602,7 +1434,7 @@ function ResourcesTab({ resources, setResources }) {
           style={{
             padding: "8px 12px",
             border: `3px solid ${P.border}`,
-            background: filter === "all" ? P.red : P.card,
+            background: filter === "all" ? P.danger : P.card,
             color: filter === "all" ? "#fff" : P.text,
             fontSize: 8,
             fontFamily: PIXEL_FONT,
@@ -1642,7 +1474,7 @@ function ResourcesTab({ resources, setResources }) {
                     <span style={{ fontSize: 12, fontWeight: 600, background: t.bg, color: t.color, padding: "4px 10px", borderRadius: 8 }}>{t.icon} {t.label}</span>
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: P.text, lineHeight: 1.3 }}>{r.title}</div>
-                  <div style={{ fontSize: 12, color: P.a1, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.url}</div>
+                  <div style={{ fontSize: 12, color: P.primary, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.url}</div>
                   {r.note && <div style={{ fontSize: 13, color: P.soft, marginTop: 6, lineHeight: 1.5 }}>{r.note}</div>}
                 </div>
                 {/* Actions — stop propagation so they don't trigger the card's openUrl */}
@@ -1687,7 +1519,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
   return (
     <div style={{
       width: 220,
-      background: P.red,
+      background: P.primary,
       height: "100vh",
       position: "fixed",
       left: 0,
@@ -1737,7 +1569,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
               {/* Selection arrow */}
               <span style={{ opacity: isActive ? 1 : 0, fontSize: 12 }}>▶</span>
               <span style={{
-                background: isActive ? P.yellow : "rgba(255,255,255,0.3)",
+                background: isActive ? P.warning : "rgba(255,255,255,0.3)",
                 color: isActive ? P.border : "#fff",
                 padding: "4px 8px",
                 fontSize: 8,
@@ -1823,7 +1655,7 @@ function AuthPage({ onAuth }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: P.red,
+      background: `linear-gradient(135deg, ${P.primary} 0%, #7986cb 100%)`,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -1836,55 +1668,50 @@ function AuthPage({ onAuth }) {
       <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
 
       {/* Decorative Pokeballs */}
-      <div style={{ position: "absolute", top: 40, left: 40, opacity: 0.1 }}>
+      <div style={{ position: "absolute", top: 40, left: 40, opacity: 0.08 }}>
         <Pokeball size={120} />
       </div>
-      <div style={{ position: "absolute", bottom: 40, right: 40, opacity: 0.1 }}>
+      <div style={{ position: "absolute", bottom: 40, right: 40, opacity: 0.08 }}>
         <Pokeball size={80} />
       </div>
 
       <div style={{
         background: P.card,
-        border: `4px solid ${P.border}`,
+        border: `2px solid ${P.borderLight}`,
+        borderRadius: 16,
         padding: isDesktop ? "40px 48px" : "28px 24px",
         width: "100%",
         maxWidth: 400,
-        boxShadow: "8px 8px 0 rgba(0,0,0,0.3)",
-        position: "relative",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
       }}>
-        {/* Corner decorations */}
-        <div style={{ position: "absolute", top: -4, left: -4, width: 16, height: 16, background: P.yellow, border: `4px solid ${P.border}` }} />
-        <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, background: P.blue, border: `4px solid ${P.border}` }} />
-        <div style={{ position: "absolute", bottom: -4, left: -4, width: 16, height: 16, background: P.green, border: `4px solid ${P.border}` }} />
-        <div style={{ position: "absolute", bottom: -4, right: -4, width: 16, height: 16, background: P.red, border: `4px solid ${P.border}` }} />
-
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <Pokeball size={48} style={{ marginBottom: 16 }} />
-          <h1 style={{ fontSize: 20, fontFamily: PIXEL_FONT, color: P.text, margin: 0, letterSpacing: 3 }}>HEXUO</h1>
+          <h1 style={{ fontSize: 16, fontFamily: PIXEL_FONT, color: P.text, margin: 0, letterSpacing: 2 }}>HEXUO</h1>
           <p style={{ fontSize: 18, fontFamily: BODY_FONT, color: P.soft, marginTop: 8 }}>TCG Portfolio Tracker</p>
         </div>
 
-        {/* Tabs - Game Boy style */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 24, border: `3px solid ${P.border}` }}>
+        {/* Tabs - Modern pixel style */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
           {[
             { id: "login", label: "CONNEXION" },
             { id: "signup", label: "NOUVEAU" },
-          ].map((t, idx) => (
+          ].map((t) => (
             <button
               key={t.id}
               onClick={() => { setMode(t.id); setError(null); setMessage(null); }}
               style={{
                 flex: 1,
                 padding: "12px 8px",
-                border: "none",
-                borderRight: idx === 0 ? `3px solid ${P.border}` : "none",
-                background: mode === t.id ? P.yellow : P.card,
-                color: P.text,
+                border: `2px solid ${mode === t.id ? P.primary : P.borderLight}`,
+                borderRadius: 8,
+                background: mode === t.id ? P.primary : P.card,
+                color: mode === t.id ? "#fff" : P.text,
                 fontSize: 8,
                 fontFamily: PIXEL_FONT,
                 cursor: "pointer",
                 letterSpacing: 1,
+                transition: "all 0.15s ease",
               }}
             >
               {mode === t.id && "▶ "}{t.label}
@@ -1905,12 +1732,13 @@ function AuthPage({ onAuth }) {
               style={{
                 width: "100%",
                 padding: "12px 14px",
-                border: `3px solid ${P.border}`,
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 8,
                 fontSize: 18,
                 fontFamily: BODY_FONT,
                 outline: "none",
                 boxSizing: "border-box",
-                background: P.card,
+                background: P.bg,
               }}
             />
           </div>
@@ -1927,12 +1755,13 @@ function AuthPage({ onAuth }) {
               style={{
                 width: "100%",
                 padding: "12px 14px",
-                border: `3px solid ${P.border}`,
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 8,
                 fontSize: 18,
                 fontFamily: BODY_FONT,
                 outline: "none",
                 boxSizing: "border-box",
-                background: P.card,
+                background: P.bg,
               }}
             />
             {mode === "signup" && (
@@ -1942,23 +1771,25 @@ function AuthPage({ onAuth }) {
 
           {error && (
             <div style={{
-              background: P.card,
-              border: `3px solid ${P.danger}`,
+              background: "#fef2f2",
+              border: `2px solid ${P.danger}`,
+              borderRadius: 8,
               color: P.danger,
               padding: "10px 12px",
               marginBottom: 16,
               fontSize: 14,
               fontFamily: BODY_FONT,
             }}>
-              ! {error}
+              {error}
             </div>
           )}
 
           {message && (
             <div style={{
-              background: P.card,
-              border: `3px solid ${P.green}`,
-              color: P.green,
+              background: "#f0fdf4",
+              border: `2px solid ${P.success}`,
+              borderRadius: 8,
+              color: P.success,
               padding: "10px 12px",
               marginBottom: 16,
               fontSize: 14,
@@ -1974,14 +1805,16 @@ function AuthPage({ onAuth }) {
             style={{
               width: "100%",
               padding: "14px",
-              border: `3px solid ${P.border}`,
-              background: loading ? P.borderLight : P.red,
+              border: "none",
+              borderRadius: 8,
+              background: loading ? P.borderLight : P.primary,
               color: "#fff",
               fontSize: 10,
               fontFamily: PIXEL_FONT,
               cursor: loading ? "wait" : "pointer",
               letterSpacing: 1,
-              boxShadow: loading ? "none" : "4px 4px 0 rgba(0,0,0,0.3)",
+              boxShadow: loading ? "none" : "0 4px 12px rgba(92, 107, 192, 0.3)",
+              transition: "all 0.15s ease",
             }}
           >
             {loading ? "CHARGEMENT..." : mode === "login" ? "CONNEXION" : "CREER COMPTE"}
@@ -2334,7 +2167,7 @@ export default function App() {
         <div style={{ marginLeft: 220, minHeight: "100vh" }}>
           {/* Header - Retro style */}
           <header style={{
-            background: P.blue,
+            background: P.primary,
             borderBottom: `4px solid ${P.border}`,
             padding: "16px 32px",
             position: "sticky",
@@ -2388,7 +2221,7 @@ export default function App() {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        background: P.red,
+        background: P.primary,
         borderBottom: `4px solid ${P.border}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2440,7 +2273,7 @@ export default function App() {
               padding: "14px 8px 28px",
               border: "none",
               borderRight: idx < TABS.length - 1 ? `2px solid ${P.borderLight}` : "none",
-              background: tab === t.id ? P.yellow : P.card,
+              background: tab === t.id ? P.warning : P.card,
               color: P.text,
               fontSize: 8,
               fontFamily: PIXEL_FONT,
