@@ -1,31 +1,48 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, createContext, useContext } from "react";
 import { supabase } from "./supabase";
 
 // ═══════════════════════════════════════════════════════════
-// MODERN PIXEL ART THEME - Soft & Clean
+// THEME SYSTEM - Light & Dark Mode
 // ═══════════════════════════════════════════════════════════
-const P = {
-  // Base - Clean modern background
-  bg: "#f8f9fa",             // Light gray, clean
-  card: "#ffffff",           // Pure white cards
-  shadow: "0 2px 8px rgba(0,0,0,0.06)", // Subtle modern shadow
-
-  // Accent colors - Muted & sophisticated
-  primary: "#5c6bc0",        // Soft indigo
-  secondary: "#78909c",      // Blue gray
-  success: "#66bb6a",        // Soft green
-  warning: "#ffb74d",        // Soft amber
-  danger: "#ef5350",         // Soft red
-
-  // UI colors
-  text: "#37474f",           // Dark blue-gray
-  soft: "#90a4ae",           // Muted text
-  accent: "#5c6bc0",         // Indigo accent
-
-  // Borders - Softer
-  border: "#455a64",         // Dark but not black
-  borderLight: "#cfd8dc",    // Light border
+const THEMES = {
+  light: {
+    bg: "#f8f9fa",
+    card: "#ffffff",
+    shadow: "0 2px 8px rgba(0,0,0,0.06)",
+    primary: "#5c6bc0",
+    secondary: "#78909c",
+    success: "#66bb6a",
+    warning: "#ffb74d",
+    danger: "#ef5350",
+    text: "#37474f",
+    soft: "#90a4ae",
+    accent: "#5c6bc0",
+    border: "#455a64",
+    borderLight: "#cfd8dc",
+  },
+  dark: {
+    bg: "#1a1a2e",
+    card: "#16213e",
+    shadow: "0 2px 12px rgba(0,0,0,0.3)",
+    primary: "#7c8ce0",
+    secondary: "#8eacbb",
+    success: "#81c784",
+    warning: "#ffcc80",
+    danger: "#ef7070",
+    text: "#e8eaed",
+    soft: "#9aa0a6",
+    accent: "#7c8ce0",
+    border: "#3d4f6f",
+    borderLight: "#2d3a5a",
+  }
 };
+
+// Theme Context
+const ThemeContext = createContext();
+const useTheme = () => useContext(ThemeContext);
+
+// Default to light theme (will be overridden by ThemeProvider)
+let P = THEMES.light;
 
 // Pixel font family
 const PIXEL_FONT = "'Press Start 2P', monospace";
@@ -77,6 +94,110 @@ function useMediaQuery(query) {
 
 const useIsDesktop = () => useMediaQuery("(min-width: 900px)");
 const useIsWide = () => useMediaQuery("(min-width: 1200px)");
+
+// ═══════════════════════════════════════════════════════════
+// TOAST NOTIFICATION SYSTEM
+// ═══════════════════════════════════════════════════════════
+const ToastContext = createContext();
+
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback((message, type = "success", duration = 3000) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, duration);
+  }, []);
+
+  const toast = useMemo(() => ({
+    success: (msg) => addToast(msg, "success"),
+    error: (msg) => addToast(msg, "error"),
+    info: (msg) => addToast(msg, "info"),
+    warning: (msg) => addToast(msg, "warning"),
+  }), [addToast]);
+
+  return (
+    <ToastContext.Provider value={toast}>
+      {children}
+      {/* Toast container */}
+      <div style={{
+        position: "fixed",
+        top: 20,
+        right: 20,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        pointerEvents: "none",
+      }}>
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            style={{
+              padding: "14px 20px",
+              borderRadius: 10,
+              background: t.type === "success" ? P.success : t.type === "error" ? P.danger : t.type === "warning" ? P.warning : P.primary,
+              color: "#fff",
+              fontFamily: BODY_FONT,
+              fontSize: 18,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+              animation: "slideIn 0.3s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              pointerEvents: "auto",
+            }}
+          >
+            <span style={{ fontSize: 20 }}>
+              {t.type === "success" ? "✓" : t.type === "error" ? "✕" : t.type === "warning" ? "⚠" : "ℹ"}
+            </span>
+            {t.message}
+          </div>
+        ))}
+      </div>
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
+    </ToastContext.Provider>
+  );
+}
+
+const useToast = () => useContext(ToastContext);
+
+// ═══════════════════════════════════════════════════════════
+// THEME PROVIDER COMPONENT
+// ═══════════════════════════════════════════════════════════
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("hexuo-theme") || "light";
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("hexuo-theme", theme);
+    P = THEMES[theme];
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+  }, []);
+
+  // Update P on mount
+  P = THEMES[theme];
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme, P: THEMES[theme] }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
 
 const fmt = (n) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
@@ -355,6 +476,176 @@ function DonutChart({ items }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// PORTFOLIO EVOLUTION CHART
+// ═══════════════════════════════════════════════════════════
+function PortfolioChart({ items }) {
+  // Generate data points from transactions
+  const dataPoints = useMemo(() => {
+    if (items.length === 0) return [];
+
+    // Get all transactions with dates
+    const allTransactions = items.flatMap(item =>
+      (item.transactions || []).map(tx => ({
+        date: tx.date,
+        cost: tx.price * tx.quantity,
+        item,
+      }))
+    );
+
+    if (allTransactions.length === 0) return [];
+
+    // Sort by date
+    allTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Build cumulative data
+    let cumulativeCost = 0;
+    const points = [];
+    const dateMap = new Map();
+
+    allTransactions.forEach(tx => {
+      cumulativeCost += tx.cost;
+      dateMap.set(tx.date, cumulativeCost);
+    });
+
+    // Convert to array
+    dateMap.forEach((value, date) => {
+      points.push({ date, invested: value });
+    });
+
+    // Add current value point (today)
+    const totalInvested = items.reduce((s, i) => s + totalCost(i), 0);
+    const currentValue = items.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
+    const todayDate = today();
+
+    if (points.length > 0) {
+      points.push({ date: todayDate, invested: totalInvested, currentValue });
+    }
+
+    return points;
+  }, [items]);
+
+  if (dataPoints.length < 2) return null;
+
+  // Chart dimensions
+  const width = 320;
+  const height = 150;
+  const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  // Scale calculations
+  const maxValue = Math.max(
+    ...dataPoints.map(d => d.invested),
+    dataPoints[dataPoints.length - 1]?.currentValue || 0
+  );
+  const minDate = new Date(dataPoints[0].date);
+  const maxDate = new Date(dataPoints[dataPoints.length - 1].date);
+  const dateRange = maxDate - minDate || 1;
+
+  const scaleX = (date) => padding.left + ((new Date(date) - minDate) / dateRange) * chartWidth;
+  const scaleY = (value) => padding.top + chartHeight - (value / maxValue) * chartHeight;
+
+  // Generate path
+  const linePath = dataPoints.map((d, i) =>
+    `${i === 0 ? 'M' : 'L'} ${scaleX(d.date)} ${scaleY(d.invested)}`
+  ).join(' ');
+
+  // Area under curve
+  const areaPath = linePath +
+    ` L ${scaleX(dataPoints[dataPoints.length - 1].date)} ${scaleY(0)}` +
+    ` L ${scaleX(dataPoints[0].date)} ${scaleY(0)} Z`;
+
+  const currentValue = dataPoints[dataPoints.length - 1]?.currentValue || 0;
+  const totalInvested = dataPoints[dataPoints.length - 1]?.invested || 0;
+  const isProfit = currentValue >= totalInvested;
+
+  return (
+    <Card style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 12, letterSpacing: 1 }}>
+        EVOLUTION PORTFOLIO
+      </div>
+
+      <svg width={width} height={height} style={{ display: "block", maxWidth: "100%" }}>
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map(pct => (
+          <g key={pct}>
+            <line
+              x1={padding.left}
+              y1={scaleY(maxValue * pct)}
+              x2={width - padding.right}
+              y2={scaleY(maxValue * pct)}
+              stroke={P.borderLight}
+              strokeDasharray="4 2"
+            />
+            <text
+              x={padding.left - 8}
+              y={scaleY(maxValue * pct)}
+              fontSize={10}
+              fontFamily={BODY_FONT}
+              fill={P.soft}
+              textAnchor="end"
+              dominantBaseline="middle"
+            >
+              {fmt(maxValue * pct).replace(/[^\d]/g, '')}
+            </text>
+          </g>
+        ))}
+
+        {/* Area fill */}
+        <path d={areaPath} fill={isProfit ? `${P.success}20` : `${P.danger}20`} />
+
+        {/* Line */}
+        <path
+          d={linePath}
+          fill="none"
+          stroke={isProfit ? P.success : P.danger}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Data points */}
+        {dataPoints.map((d, i) => (
+          <circle
+            key={i}
+            cx={scaleX(d.date)}
+            cy={scaleY(d.invested)}
+            r={4}
+            fill={P.card}
+            stroke={isProfit ? P.success : P.danger}
+            strokeWidth={2}
+          />
+        ))}
+
+        {/* Current value indicator */}
+        {currentValue > 0 && (
+          <circle
+            cx={scaleX(dataPoints[dataPoints.length - 1].date)}
+            cy={scaleY(currentValue)}
+            r={6}
+            fill={isProfit ? P.success : P.danger}
+            stroke={P.card}
+            strokeWidth={2}
+          />
+        )}
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 12, height: 3, background: isProfit ? P.success : P.danger, borderRadius: 2 }} />
+          <span style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>Investi</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 8, height: 8, background: isProfit ? P.success : P.danger, borderRadius: "50%" }} />
+          <span style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>Valeur actuelle</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // Fee rates for platforms
 const PLATFORM_FEES = {
   ebay: { label: "eBay", rate: 0.13 },
@@ -574,10 +865,75 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
+  const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
   const isDesktop = useIsDesktop();
   const isWide = useIsWide();
+  const toast = useToast();
+
+  // Search and filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all"); // all, profit, loss, sold
+  const [sortBy, setSortBy] = useState("name"); // name, value, pnl, date
+
+  // Available types from items
+  const itemTypes = useMemo(() => {
+    const types = [...new Set(items.map(i => i.type))];
+    return types.sort();
+  }, [items]);
+
+  // Filtered and sorted items
+  const filteredItems = useMemo(() => {
+    let result = items;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(i =>
+        i.name.toLowerCase().includes(query) ||
+        i.type.toLowerCase().includes(query)
+      );
+    }
+
+    // Type filter
+    if (filterType !== "all") {
+      result = result.filter(i => i.type === filterType);
+    }
+
+    // Status filter
+    if (filterStatus !== "all") {
+      result = result.filter(i => {
+        const pnl = getItemPnL(i);
+        const hasSales = i.sold && i.sold.length > 0;
+        const soldQty = hasSales ? i.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
+        const isFullySold = soldQty >= totalQty(i);
+
+        if (filterStatus === "profit") return pnl >= 0;
+        if (filterStatus === "loss") return pnl < 0;
+        if (filterStatus === "sold") return isFullySold;
+        return true;
+      });
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case "value":
+          return (b.currentPrice * totalQty(b)) - (a.currentPrice * totalQty(a));
+        case "pnl":
+          return getItemPnLPct(b) - getItemPnLPct(a);
+        case "date":
+          const dateA = a.transactions?.[0]?.date || "1970-01-01";
+          const dateB = b.transactions?.[0]?.date || "1970-01-01";
+          return new Date(dateB) - new Date(dateA);
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return result;
+  }, [items, searchQuery, filterType, filterStatus, sortBy]);
 
   // Get releases sorted by date (most recent first), grouped by year
   const releasesByYear = useMemo(() => {
@@ -620,15 +976,40 @@ function WalletTab({ items, setItems, events }) {
   const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
 
   const addItem = () => {
-    if (!form.name || Number(form.price) <= 0) return;
-    setItems([...items, { id: Date.now(), name: form.name, type: form.type, currentPrice: Number(form.currentPrice) || Number(form.price), transactions: [{ id: Date.now() + 1, date: form.date, price: Number(form.price), quantity: Number(form.quantity), source: form.source || "Non spécifié" }] }]);
-    setForm({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "" });
+    if (!form.name || Number(form.price) <= 0) {
+      toast?.error("Veuillez remplir tous les champs");
+      return;
+    }
+    const newItem = {
+      id: Date.now(),
+      name: form.name,
+      type: form.type,
+      currentPrice: Number(form.currentPrice) || Number(form.price),
+      imageUrl: form.imageUrl || null,
+      transactions: [{
+        id: Date.now() + 1,
+        date: form.date,
+        price: Number(form.price),
+        quantity: Number(form.quantity),
+        source: form.source || "Non spécifié"
+      }]
+    };
+    setItems([...items, newItem]);
+    setForm({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "" });
     setShowForm(false);
+    toast?.success(`${form.name} ajouté !`);
   };
 
   const handleItemUpdate = (updated) => {
-    if (updated === null) { setItems((p) => p.filter((i) => i.id !== selectedId)); setSelectedId(null); }
-    else setItems((p) => p.map((i) => (i.id === updated.id ? updated : i)));
+    if (updated === null) {
+      const itemName = items.find(i => i.id === selectedId)?.name || "Item";
+      setItems((p) => p.filter((i) => i.id !== selectedId));
+      setSelectedId(null);
+      toast?.success(`${itemName} supprimé`);
+    } else {
+      setItems((p) => p.map((i) => (i.id === updated.id ? updated : i)));
+      toast?.success("Modifications sauvegardées");
+    }
   };
 
   return (
@@ -681,6 +1062,9 @@ function WalletTab({ items, setItems, events }) {
         ))}
       </div>
 
+      {/* Portfolio Evolution Chart */}
+      {items.length > 0 && <PortfolioChart items={items} />}
+
       {/* Advanced stats - Retro card */}
       {items.length > 0 && (
         <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
@@ -710,6 +1094,106 @@ function WalletTab({ items, setItems, events }) {
         </Card>
       )}
 
+      {/* Search and Filter Bar */}
+      {items.length > 0 && (
+        <Card style={{ marginBottom: 16, padding: "14px 16px" }}>
+          {/* Search */}
+          <div style={{ position: "relative", marginBottom: 12 }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: P.soft }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px 10px 38px",
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 8,
+                fontSize: 16,
+                fontFamily: BODY_FONT,
+                background: P.bg,
+                color: P.text,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          {/* Filters row */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {/* Type filter */}
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 6,
+                fontSize: 14,
+                fontFamily: BODY_FONT,
+                background: P.card,
+                color: P.text,
+                cursor: "pointer",
+              }}
+            >
+              <option value="all">Tous types</option>
+              {itemTypes.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+
+            {/* Status filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 6,
+                fontSize: 14,
+                fontFamily: BODY_FONT,
+                background: P.card,
+                color: P.text,
+                cursor: "pointer",
+              }}
+            >
+              <option value="all">Tous</option>
+              <option value="profit">Profit</option>
+              <option value="loss">Perte</option>
+              <option value="sold">Vendus</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: `2px solid ${P.borderLight}`,
+                borderRadius: 6,
+                fontSize: 14,
+                fontFamily: BODY_FONT,
+                background: P.card,
+                color: P.text,
+                cursor: "pointer",
+              }}
+            >
+              <option value="name">Nom A-Z</option>
+              <option value="value">Valeur ↓</option>
+              <option value="pnl">P&L % ↓</option>
+              <option value="date">Date ↓</option>
+            </select>
+          </div>
+
+          {/* Results count */}
+          {(searchQuery || filterType !== "all" || filterStatus !== "all") && (
+            <div style={{ marginTop: 10, fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>
+              {filteredItems.length} résultat{filteredItems.length !== 1 ? "s" : ""}
+              {searchQuery && ` pour "${searchQuery}"`}
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* Items list */}
       <div style={{
           display: "flex",
@@ -717,7 +1201,7 @@ function WalletTab({ items, setItems, events }) {
           gap: 10,
           marginBottom: 18
         }}>
-          {items.map((item) => {
+          {filteredItems.map((item) => {
             const realPnL = getItemPnL(item);
             const realPnLPct = getItemPnLPct(item);
             const isUp = realPnL >= 0;
@@ -728,6 +1212,36 @@ function WalletTab({ items, setItems, events }) {
             return (
               <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
                 <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  {/* Item thumbnail */}
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        border: `2px solid ${P.borderLight}`,
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => e.target.style.display = "none"}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 56,
+                      height: 56,
+                      background: P.bg,
+                      borderRadius: 8,
+                      border: `2px solid ${P.borderLight}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <Pokeball size={28} />
+                    </div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 600, marginBottom: 6 }}>{item.name}</div>
                     <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -837,6 +1351,12 @@ function WalletTab({ items, setItems, events }) {
               <option value="Ultra Premium Collection">Ultra Premium Collection</option><option value="Bundle">Bundle</option><option value="Elite Trainer Box">Elite Trainer Box</option><option value="Collection Box">Collection Box</option>
             </select>
           </div>
+          <Input label="Image URL (optionnel)" type="url" placeholder="https://..." value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+          {form.imageUrl && (
+            <div style={{ marginBottom: 12, textAlign: "center" }}>
+              <img src={form.imageUrl} alt="Preview" style={{ maxWidth: 100, maxHeight: 100, borderRadius: 8, border: `2px solid ${P.borderLight}` }} onError={(e) => e.target.style.display = "none"} />
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={addItem} style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Ajouter</button>
             <button onClick={() => setShowForm(false)} style={{ padding: "10px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "transparent", color: P.soft, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
@@ -1511,11 +2031,13 @@ const TABS = [
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR COMPONENT (Desktop only) - RETRO STYLE
 // ═══════════════════════════════════════════════════════════
-function Sidebar({ tab, setTab, user, onLogout }) {
+function Sidebar({ tab, setTab, user, onLogout, theme, toggleTheme }) {
   return (
     <div style={{
       width: 220,
-      background: `linear-gradient(180deg, ${P.primary} 0%, #4a5ab8 100%)`,
+      background: theme === "dark"
+        ? `linear-gradient(180deg, #1e1e3f 0%, #0d1b2a 100%)`
+        : `linear-gradient(180deg, ${P.primary} 0%, #4a5ab8 100%)`,
       height: "100vh",
       position: "fixed",
       left: 0,
@@ -1590,12 +2112,37 @@ function Sidebar({ tab, setTab, user, onLogout }) {
         })}
       </nav>
 
-      {/* Footer - Trainer info */}
+      {/* Footer - Trainer info & Theme toggle */}
       <div style={{ padding: "16px", borderTop: `3px solid ${P.border}`, background: "rgba(0,0,0,0.1)" }}>
         <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>TRAINER</div>
         <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: "#fff", marginBottom: 12, overflow: "hidden", textOverflow: "ellipsis" }}>
           {user?.email?.split("@")[0] || "???"}
         </div>
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            width: "100%",
+            padding: "10px",
+            border: "2px solid rgba(255,255,255,0.3)",
+            borderRadius: 8,
+            background: "rgba(255,255,255,0.1)",
+            color: "#fff",
+            fontSize: 9,
+            fontFamily: PIXEL_FONT,
+            cursor: "pointer",
+            letterSpacing: 1,
+            marginBottom: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          {theme === "dark" ? "☀️" : "🌙"} {theme === "dark" ? "LIGHT" : "DARK"}
+        </button>
+
         {user && (
           <button
             onClick={onLogout}
@@ -1834,7 +2381,11 @@ function AuthPage({ onAuth }) {
   );
 }
 
-export default function App() {
+function AppContent() {
+  const { theme, toggleTheme, P: themeP } = useTheme() || { theme: "light", toggleTheme: () => {}, P: THEMES.light };
+  // Update global P when theme changes
+  P = themeP;
+
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [tab, setTab] = useState("wallet");
@@ -2170,7 +2721,7 @@ export default function App() {
         <style>{retroStyles}</style>
 
         {/* Sidebar */}
-        <Sidebar tab={tab} setTab={setTab} user={session.user} onLogout={handleLogout} />
+        <Sidebar tab={tab} setTab={setTab} user={session.user} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />
 
         {/* Main content */}
         <div style={{ marginLeft: 220, minHeight: "100vh" }}>
@@ -2237,21 +2788,38 @@ export default function App() {
           <Pokeball size={28} />
           <span style={{ fontSize: 12, fontFamily: PIXEL_FONT, color: "#fff", letterSpacing: 2 }}>HEXUO</span>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: "8px 12px",
-            border: `2px solid #fff`,
-            background: "transparent",
-            color: "#fff",
-            fontSize: 8,
-            fontFamily: PIXEL_FONT,
-            cursor: "pointer",
-            letterSpacing: 1,
-          }}
-        >
-          QUIT
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: "8px 10px",
+              border: `2px solid rgba(255,255,255,0.5)`,
+              borderRadius: 6,
+              background: "rgba(255,255,255,0.1)",
+              color: "#fff",
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: "8px 12px",
+              border: `2px solid #fff`,
+              background: "transparent",
+              color: "#fff",
+              fontSize: 8,
+              fontFamily: PIXEL_FONT,
+              cursor: "pointer",
+              letterSpacing: 1,
+            }}
+          >
+            QUIT
+          </button>
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -2305,5 +2873,18 @@ export default function App() {
         ))}
       </div>
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN APP EXPORT - With Providers
+// ═══════════════════════════════════════════════════════════
+export default function App() {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
