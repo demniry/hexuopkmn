@@ -789,6 +789,77 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
     onUpdate({ ...item, targetPrice: v });
     toast?.success(v ? `Alerte fixée à ${fmt(v)}` : "Alerte supprimée");
   };
+
+  // eBay market price tracking
+  const [ebayQuery, setEbayQuery] = useState(item.ebayQuery || "");
+  const [editingEbayQuery, setEditingEbayQuery] = useState(false);
+  const [loadingMarketPrice, setLoadingMarketPrice] = useState(false);
+
+  // Generate suggested eBay query from item name
+  const suggestEbayQuery = () => {
+    const name = item.name.toLowerCase()
+      .replace(/[éèê]/g, "e")
+      .replace(/[àâ]/g, "a")
+      .replace(/[ùû]/g, "u")
+      .replace(/[ôö]/g, "o")
+      .replace(/[îï]/g, "i");
+    return `pokemon ${name} sealed`;
+  };
+
+  const saveEbayQuery = () => {
+    onUpdate({ ...item, ebayQuery: ebayQuery.trim() || null });
+    setEditingEbayQuery(false);
+    toast?.success(ebayQuery.trim() ? "Requête eBay enregistrée" : "Requête eBay supprimée");
+  };
+
+  const fetchMarketPrice = async () => {
+    const query = item.ebayQuery || ebayQuery.trim();
+    if (!query) {
+      toast?.error("Définis d'abord une requête eBay");
+      return;
+    }
+
+    setLoadingMarketPrice(true);
+    try {
+      // Call Supabase Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-price`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ query }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors de la récupération du prix");
+      }
+
+      // Update item with market price data
+      onUpdate({
+        ...item,
+        ebayQuery: query,
+        marketPrice: data.median,
+        marketPriceMin: data.min,
+        marketPriceMax: data.max,
+        marketPriceSalesCount: data.salesCount,
+        marketPriceUpdatedAt: data.updatedAt,
+      });
+
+      toast?.success(`Prix marché mis à jour : ${fmt(data.median)}`);
+    } catch (error) {
+      console.error("Error fetching market price:", error);
+      toast?.error(error.message || "Erreur lors de la récupération du prix");
+    } finally {
+      setLoadingMarketPrice(false);
+    }
+  };
+
   const addTx = () => { if (!newTx.source || Number(newTx.price) <= 0) return; onUpdate({ ...item, transactions: [...item.transactions, { id: Date.now(), date: newTx.date, price: Number(newTx.price), quantity: Number(newTx.quantity), source: newTx.source }] }); setNewTx({ date: today(), price: "", quantity: "1", source: "" }); };
   const deleteTx = (id) => { const rem = item.transactions.filter((t) => t.id !== id); onUpdate(rem.length === 0 ? null : { ...item, transactions: rem }); };
   const saveTx = (id) => { if (!editTx.source || Number(editTx.price) <= 0) return; onUpdate({ ...item, transactions: item.transactions.map((t) => t.id === id ? { ...t, source: editTx.source, date: editTx.date, price: Number(editTx.price), quantity: Number(editTx.quantity) } : t) }); setEditingTxId(null); };
@@ -878,6 +949,106 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
             Alerte active : {fmt(item.targetPrice)} ({item.currentPrice >= item.targetPrice ? "✅ Atteint !" : `${((item.targetPrice - item.currentPrice) / item.currentPrice * 100).toFixed(0)}% restant`})
           </div>
         )}
+      </div>
+
+      {/* eBay Market Price */}
+      <div style={{ background: "#e0f2fe", borderRadius: 10, padding: "14px 16px", marginBottom: 18, border: "2px solid #0284c7" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 18 }}>📊</span>
+          <div style={{ fontSize: 11, color: "#0369a1", fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase" }}>Prix marché eBay</div>
+        </div>
+
+        {/* eBay Query */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: "#0369a1", marginBottom: 6, fontFamily: BODY_FONT }}>Requête de recherche :</div>
+          {editingEbayQuery ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="text"
+                value={ebayQuery}
+                onChange={(e) => setEbayQuery(e.target.value)}
+                placeholder={suggestEbayQuery()}
+                style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1.5px solid #0284c7", fontSize: 14, fontFamily: BODY_FONT, outline: "none", background: "#fff", color: P.text }}
+              />
+              <button onClick={saveEbayQuery} style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#0284c7", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontFamily: PIXEL_FONT }}>OK</button>
+              <button onClick={() => setEditingEbayQuery(false)} style={{ fontSize: 14, color: "#64748b", background: "none", border: "none", cursor: "pointer" }}>✕</button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ flex: 1, padding: "8px 12px", background: "#fff", borderRadius: 8, fontSize: 14, fontFamily: BODY_FONT, color: item.ebayQuery ? P.text : P.soft }}>
+                {item.ebayQuery || "Non définie"}
+              </div>
+              <button onClick={() => { setEbayQuery(item.ebayQuery || suggestEbayQuery()); setEditingEbayQuery(true); }} style={{ fontSize: 10, fontWeight: 600, color: "#0284c7", background: "#fff", border: "1.5px solid #0284c7", borderRadius: 6, padding: "6px 10px", cursor: "pointer", fontFamily: PIXEL_FONT }}>
+                {item.ebayQuery ? "EDIT" : "SET"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Market Price Display */}
+        {item.marketPrice ? (
+          <div style={{ background: "#fff", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: P.text, fontFamily: BODY_FONT }}>{fmt(item.marketPrice)}</div>
+                <div style={{ fontSize: 12, color: P.soft, fontFamily: BODY_FONT }}>Médiane de {item.marketPriceSalesCount} ventes</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 12, color: P.soft, fontFamily: BODY_FONT }}>Min: {fmt(item.marketPriceMin)}</div>
+                <div style={{ fontSize: 12, color: P.soft, fontFamily: BODY_FONT }}>Max: {fmt(item.marketPriceMax)}</div>
+              </div>
+            </div>
+
+            {/* Comparison with your price */}
+            {(() => {
+              const diff = item.currentPrice - item.marketPrice;
+              const diffPct = ((diff / item.marketPrice) * 100).toFixed(1);
+              const isAbove = diff > 0;
+              return (
+                <div style={{
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  background: isAbove ? "#dcfce7" : "#fee2e2",
+                  border: `1px solid ${isAbove ? "#86efac" : "#fca5a5"}`,
+                }}>
+                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: isAbove ? "#166534" : "#991b1b", fontWeight: 600 }}>
+                    {isAbove ? "📈" : "📉"} Ton prix est {isAbove ? "+" : ""}{fmt(diff)} ({isAbove ? "+" : ""}{diffPct}%) {isAbove ? "au-dessus" : "en-dessous"} du marché
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Last updated */}
+            <div style={{ marginTop: 8, fontSize: 11, color: P.soft, fontFamily: BODY_FONT }}>
+              Mis à jour : {item.marketPriceUpdatedAt ? new Date(item.marketPriceUpdatedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "N/A"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ background: "#fff", borderRadius: 8, padding: 12, marginBottom: 12, textAlign: "center", color: P.soft, fontFamily: BODY_FONT }}>
+            Aucun prix marché disponible
+          </div>
+        )}
+
+        {/* Refresh button */}
+        <button
+          onClick={fetchMarketPrice}
+          disabled={loadingMarketPrice || (!item.ebayQuery && !ebayQuery.trim())}
+          style={{
+            width: "100%",
+            padding: "10px",
+            border: "none",
+            borderRadius: 8,
+            background: loadingMarketPrice ? "#94a3b8" : "#0284c7",
+            color: "#fff",
+            fontSize: 11,
+            fontFamily: PIXEL_FONT,
+            cursor: loadingMarketPrice ? "wait" : "pointer",
+            letterSpacing: 1,
+            opacity: (!item.ebayQuery && !ebayQuery.trim()) ? 0.5 : 1,
+          }}
+        >
+          {loadingMarketPrice ? "CHARGEMENT..." : "🔄 ACTUALISER LE PRIX MARCHÉ"}
+        </button>
       </div>
 
       {/* Price History Chart */}
@@ -3011,6 +3182,13 @@ function AppContent() {
           priceHistory: i.price_history || [],
           targetPrice: i.target_price ? Number(i.target_price) : null,
           imageUrl: i.image_url || null,
+          // eBay market price fields
+          ebayQuery: i.ebay_query || null,
+          marketPrice: i.market_price ? Number(i.market_price) : null,
+          marketPriceMin: i.market_price_min ? Number(i.market_price_min) : null,
+          marketPriceMax: i.market_price_max ? Number(i.market_price_max) : null,
+          marketPriceSalesCount: i.market_price_sales_count || null,
+          marketPriceUpdatedAt: i.market_price_updated_at || null,
         })));
       }
 
@@ -3094,6 +3272,13 @@ function AppContent() {
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
+          // eBay fields
+          ebay_query: item.ebayQuery || null,
+          market_price: item.marketPrice || null,
+          market_price_min: item.marketPriceMin || null,
+          market_price_max: item.marketPriceMax || null,
+          market_price_sales_count: item.marketPriceSalesCount || null,
+          market_price_updated_at: item.marketPriceUpdatedAt || null,
         }).eq("id", item.id);
       } else {
         const { data } = await supabase.from("items").insert({
@@ -3106,6 +3291,13 @@ function AppContent() {
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
+          // eBay fields
+          ebay_query: item.ebayQuery || null,
+          market_price: item.marketPrice || null,
+          market_price_min: item.marketPriceMin || null,
+          market_price_max: item.marketPriceMax || null,
+          market_price_sales_count: item.marketPriceSalesCount || null,
+          market_price_updated_at: item.marketPriceUpdatedAt || null,
         }).select().single();
         if (data) {
           // Update local id with DB id
