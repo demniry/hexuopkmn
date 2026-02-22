@@ -74,7 +74,7 @@ async function searchSoldItems(query: string, accessToken: string): Promise<numb
   const encodedQuery = encodeURIComponent(query);
 
   // Search on eBay France (EBAY_FR) for more relevant prices
-  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodedQuery}&limit=50&filter=deliveryCountry:FR,priceCurrency:EUR`;
+  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodedQuery}&limit=20&filter=deliveryCountry:FR,priceCurrency:EUR`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -128,7 +128,7 @@ async function searchCompletedItemsFindingAPI(query: string): Promise<number[]> 
     `&REST-PAYLOAD` +
     `&keywords=${encodedQuery}` +
     `&GLOBAL-ID=EBAY-FR` +
-    `&paginationInput.entriesPerPage=50` +
+    `&paginationInput.entriesPerPage=20` +
     `&sortOrder=EndTimeSoonest` +
     `&itemFilter(0).name=SoldItemsOnly` +
     `&itemFilter(0).value=true` +
