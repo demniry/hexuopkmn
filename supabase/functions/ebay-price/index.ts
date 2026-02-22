@@ -2,11 +2,43 @@
 // Fetches sold listings from eBay and calculates median price
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") || "").split(",").filter(Boolean);
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0] || "*";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+// Validate JWT from the Authorization header
+async function validateAuth(req: Request): Promise<string> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("Missing or invalid authorization header");
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error("Invalid or expired token");
+  }
+
+  return user.id;
+}
 
 // Get OAuth2 access token from eBay
 async function getEbayAccessToken(): Promise<string> {
@@ -39,10 +71,6 @@ async function getEbayAccessToken(): Promise<string> {
 
 // Search for completed/sold items using eBay Browse API
 async function searchSoldItems(query: string, accessToken: string): Promise<number[]> {
-  // Use Browse API with marketplace filter for completed items
-  // Note: Browse API doesn't directly show "sold" but we can get item prices
-  // For true sold listings, we'd need Finding API, but let's try Browse first
-
   const encodedQuery = encodeURIComponent(query);
 
   // Search on eBay France (EBAY_FR) for more relevant prices
@@ -73,7 +101,7 @@ async function searchSoldItems(query: string, accessToken: string): Promise<numb
     return await searchCompletedItemsFindingAPI(query);
   }
 
-  // Extract prices (convert to EUR cents then to euros)
+  // Extract prices
   const prices: number[] = data.itemSummaries
     .filter((item: any) => item.price && item.price.value)
     .map((item: any) => parseFloat(item.price.value))
@@ -92,7 +120,6 @@ async function searchCompletedItemsFindingAPI(query: string): Promise<number[]> 
 
   const encodedQuery = encodeURIComponent(query);
 
-  // Finding API endpoint for completed items
   const url = `https://svcs.ebay.com/services/search/FindingService/v1?` +
     `OPERATION-NAME=findCompletedItems` +
     `&SERVICE-VERSION=1.0.0` +
@@ -125,7 +152,6 @@ async function searchCompletedItemsFindingAPI(query: string): Promise<number[]> 
 
   const items = searchResult.searchResult?.[0]?.item || [];
 
-  // Extract prices from sold items
   const prices: number[] = items
     .filter((item: any) => item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__)
     .map((item: any) => parseFloat(item.sellingStatus[0].currentPrice[0].__value__))
@@ -148,12 +174,17 @@ function calculateMedian(numbers: number[]): number {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Validate user authentication
+    await validateAuth(req);
+
     const { query } = await req.json();
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
@@ -202,10 +233,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    const status = error.message?.includes("authorization") || error.message?.includes("token")
+      ? 401
+      : 500;
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

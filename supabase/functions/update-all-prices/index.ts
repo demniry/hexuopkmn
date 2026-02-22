@@ -6,37 +6,37 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") || "").split(",").filter(Boolean);
 
-// Get OAuth2 access token from eBay
-async function getEbayAccessToken(): Promise<string> {
-  const clientId = Deno.env.get("EBAY_CLIENT_ID");
-  const clientSecret = Deno.env.get("EBAY_CLIENT_SECRET");
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0] || "*";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
-  if (!clientId || !clientSecret) {
-    throw new Error("eBay credentials not configured");
+// Validate that the request comes from an authorized source (cron or service role)
+function validateCronAuth(req: Request): void {
+  const authHeader = req.headers.get("authorization") || "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+  // Allow requests with service role key (from Supabase cron or admin)
+  if (authHeader === `Bearer ${serviceRoleKey}`) {
+    return;
   }
 
-  const credentials = btoa(`${clientId}:${clientSecret}`);
-
-  const response = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Authorization": `Basic ${credentials}`,
-    },
-    body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get eBay access token`);
+  // Check for cron secret header (for external cron services)
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const requestSecret = req.headers.get("x-cron-secret");
+  if (cronSecret && requestSecret === cronSecret) {
+    return;
   }
 
-  const data = await response.json();
-  return data.access_token;
+  throw new Error("Unauthorized: invalid credentials for cron job");
 }
 
 // Search for completed/sold items using eBay Finding API
@@ -104,12 +104,17 @@ function calculateMedian(numbers: number[]): number {
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Validate that this is an authorized cron/admin request
+    validateCronAuth(req);
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -198,10 +203,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    const status = error.message?.includes("Unauthorized") ? 401 : 500;
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

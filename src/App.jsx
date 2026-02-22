@@ -203,6 +203,17 @@ const fmt = (n) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 const today = () => new Date().toISOString().split("T")[0];
 
+const isValidUrl = (str) => {
+  try {
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch { return false; }
+};
+
+const MAX_NAME_LENGTH = 100;
+const MAX_NOTE_LENGTH = 500;
+const MAX_URL_LENGTH = 2000;
+
 // ═══════════════════════════════════════════════════════════
 // INITIAL DATA
 // ═══════════════════════════════════════════════════════════
@@ -211,7 +222,6 @@ const INIT = {
   events: [],
   spots: [],
   resources: [],
-  wishlist: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -356,8 +366,6 @@ function Modal({ onClose, children, title }) {
   );
 }
 
-// Alias for backward compatibility
-const BottomModal = Modal;
 
 // Stars rating display - Pixel style
 function Stars({ rating, max = 5 }) {
@@ -407,8 +415,6 @@ const getItemPnLPct = (item) => {
   return (pnl / cost) * 100;
 };
 
-// Legacy function for display (uses current price only)
-const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((item.currentPrice - avg) / avg) * 100).toFixed(1) : "0.0"; };
 
 function TypeBadge({ type }) {
   const map = {
@@ -883,7 +889,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   };
 
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div><div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{item.name}</div><div style={{ marginTop: 8 }}><TypeBadge type={item.type} /></div></div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -1189,7 +1195,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
         </div>
         <button onClick={addTx} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>Ajouter achat</button>
       </div>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -1307,13 +1313,15 @@ function WalletTab({ items, setItems, events }) {
   const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
 
   const addItem = () => {
-    if (!form.name || Number(form.price) <= 0) {
-      toast?.error("Veuillez remplir tous les champs");
-      return;
-    }
+    if (!form.name.trim()) { toast?.error("Le nom est requis"); return; }
+    if (form.name.length > MAX_NAME_LENGTH) { toast?.error(`Le nom ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (Number(form.price) <= 0) { toast?.error("Le prix d'achat doit être supérieur à 0"); return; }
+    if (Number(form.quantity) <= 0) { toast?.error("La quantité doit être supérieure à 0"); return; }
+    if (form.imageUrl && !isValidUrl(form.imageUrl)) { toast?.error("L'URL de l'image n'est pas valide"); return; }
+    if (form.imageUrl && form.imageUrl.length > MAX_URL_LENGTH) { toast?.error("L'URL est trop longue"); return; }
     const newItem = {
       id: Date.now(),
-      name: form.name,
+      name: form.name.trim(),
       type: form.type,
       currentPrice: Number(form.currentPrice) || Number(form.price),
       imageUrl: form.imageUrl || null,
@@ -1328,7 +1336,7 @@ function WalletTab({ items, setItems, events }) {
     setItems([...items, newItem]);
     setForm({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "" });
     setShowForm(false);
-    toast?.success(`${form.name} ajouté !`);
+    toast?.success(`${form.name.trim()} ajouté !`);
   };
 
   const handleItemUpdate = (updated) => {
@@ -2012,9 +2020,17 @@ const EVENT_TYPES = {
 function EventFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { title: "", date: today(), type: "release", note: "" });
   const isEdit = !!editItem;
-  const submit = () => { if (!form.title || !form.date) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const toast = useToast();
+  const submit = () => {
+    if (!form.title.trim()) { toast?.error("Le titre est requis"); return; }
+    if (form.title.length > MAX_NAME_LENGTH) { toast?.error(`Le titre ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (!form.date) { toast?.error("La date est requise"); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { toast?.error(`La note ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    onAdd({ ...form, title: form.title.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvel"} événement</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2034,7 +2050,7 @@ function EventFormModal({ onClose, onAdd, editItem }) {
       </div>
       <Input label="Note (optionnel)" type="text" placeholder="Détails..." value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2428,9 +2444,16 @@ const SPOT_TYPES = {
 function SpotFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { name: "", type: "magasin", rating: 3, note: "" });
   const isEdit = !!editItem;
-  const submit = () => { if (!form.name) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const toast = useToast();
+  const submit = () => {
+    if (!form.name.trim()) { toast?.error("Le nom est requis"); return; }
+    if (form.name.length > MAX_NAME_LENGTH) { toast?.error(`Le nom ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { toast?.error(`Le commentaire ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    onAdd({ ...form, name: form.name.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouveau"} spot</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2463,7 +2486,7 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
           onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2494,7 +2517,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
   const t = SPOT_TYPES[spot.type];
 
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
@@ -2562,7 +2585,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
           </div>
         </>
       )}
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2638,10 +2661,21 @@ const RESOURCE_TYPES = {
 
 function ResourceFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { title: "", url: "", type: "video", note: "" });
+  const [validationError, setValidationError] = useState(null);
   const isEdit = !!editItem;
-  const submit = () => { if (!form.title || !form.url) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const submit = () => {
+    if (!form.title.trim()) { setValidationError("Le titre est requis"); return; }
+    if (form.title.length > MAX_NAME_LENGTH) { setValidationError(`Le titre ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (!form.url.trim()) { setValidationError("L'URL est requise"); return; }
+    if (!isValidUrl(form.url)) { setValidationError("L'URL n'est pas valide (doit commencer par http:// ou https://)"); return; }
+    if (form.url.length > MAX_URL_LENGTH) { setValidationError("L'URL est trop longue"); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { setValidationError(`La note ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    setValidationError(null);
+    onAdd({ ...form, title: form.title.trim(), url: form.url.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvelle"} ressource</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2665,8 +2699,11 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
           style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
           onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
+      {validationError && (
+        <div style={{ background: "#fef2f2", border: `2px solid ${P.danger}`, borderRadius: 8, color: P.danger, padding: "10px 12px", marginBottom: 14, fontSize: 14, fontFamily: BODY_FONT }}>{validationError}</div>
+      )}
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -3141,7 +3178,6 @@ function AppContent() {
   const [events, setEvents] = useState(INIT.events);
   const [spots, setSpots] = useState(INIT.spots);
   const [resources, setResources] = useState(INIT.resources);
-  const [wishlist, setWishlist] = useState(INIT.wishlist);
   const [loaded, setLoaded] = useState(false);
   const isDesktop = useIsDesktop();
 
@@ -3252,6 +3288,7 @@ function AppContent() {
     const { data: dbItems } = await supabase.from("items").select("id").eq("user_id", userId);
     const dbIds = new Set((dbItems || []).map(i => i.id));
     const newIds = new Set(newItems.map(i => i.id));
+    const idMap = new Map();
 
     // Delete removed items
     for (const id of dbIds) {
@@ -3272,7 +3309,6 @@ function AppContent() {
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
-          // eBay fields
           ebay_query: item.ebayQuery || null,
           market_price: item.marketPrice || null,
           market_price_min: item.marketPriceMin || null,
@@ -3291,7 +3327,6 @@ function AppContent() {
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
-          // eBay fields
           ebay_query: item.ebayQuery || null,
           market_price: item.marketPrice || null,
           market_price_min: item.marketPriceMin || null,
@@ -3300,10 +3335,14 @@ function AppContent() {
           market_price_updated_at: item.marketPriceUpdatedAt || null,
         }).select().single();
         if (data) {
-          // Update local id with DB id
-          item.id = data.id;
+          idMap.set(item.id, data.id);
         }
       }
+    }
+
+    // Update local IDs immutably
+    if (idMap.size > 0) {
+      setItems(prev => prev.map(i => idMap.has(i.id) ? { ...i, id: idMap.get(i.id) } : i));
     }
   }, [session, loaded]);
 
@@ -3315,6 +3354,7 @@ function AppContent() {
     const { data: dbEvents } = await supabase.from("events").select("id").eq("user_id", userId);
     const dbIds = new Set((dbEvents || []).map(e => e.id));
     const newIds = new Set(newEvents.map(e => e.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3338,8 +3378,12 @@ function AppContent() {
           type: event.type,
           note: event.note,
         }).select().single();
-        if (data) event.id = data.id;
+        if (data) idMap.set(event.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setEvents(prev => prev.map(e => idMap.has(e.id) ? { ...e, id: idMap.get(e.id) } : e));
     }
   }, [session, loaded]);
 
@@ -3351,6 +3395,7 @@ function AppContent() {
     const { data: dbSpots } = await supabase.from("spots").select("id").eq("user_id", userId);
     const dbIds = new Set((dbSpots || []).map(s => s.id));
     const newIds = new Set(newSpots.map(s => s.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3374,8 +3419,12 @@ function AppContent() {
           rating: spot.rating,
           note: spot.note,
         }).select().single();
-        if (data) spot.id = data.id;
+        if (data) idMap.set(spot.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setSpots(prev => prev.map(s => idMap.has(s.id) ? { ...s, id: idMap.get(s.id) } : s));
     }
   }, [session, loaded]);
 
@@ -3387,6 +3436,7 @@ function AppContent() {
     const { data: dbResources } = await supabase.from("resources").select("id").eq("user_id", userId);
     const dbIds = new Set((dbResources || []).map(r => r.id));
     const newIds = new Set(newResources.map(r => r.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3410,8 +3460,12 @@ function AppContent() {
           type: resource.type,
           note: resource.note,
         }).select().single();
-        if (data) resource.id = data.id;
+        if (data) idMap.set(resource.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setResources(prev => prev.map(r => idMap.has(r.id) ? { ...r, id: idMap.get(r.id) } : r));
     }
   }, [session, loaded]);
 
