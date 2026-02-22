@@ -218,18 +218,20 @@ function PortfolioChart({ items }) {
 
   if (dataPoints.length < 2) return null;
 
-  // Chart dimensions
-  const width = 320;
-  const height = 150;
-  const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+  // Chart dimensions - use viewBox for responsiveness
+  const width = 400;
+  const height = 180;
+  const padding = { top: 20, right: 20, bottom: 30, left: 55 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
   // Scale calculations
+  const currentValue = dataPoints[dataPoints.length - 1]?.currentValue || 0;
+  const totalInvested = dataPoints[dataPoints.length - 1]?.invested || 0;
   const maxValue = Math.max(
     ...dataPoints.map(d => d.invested),
-    dataPoints[dataPoints.length - 1]?.currentValue || 0
-  );
+    currentValue
+  ) * 1.05; // 5% headroom
   const minDate = new Date(dataPoints[0].date);
   const maxDate = new Date(dataPoints[dataPoints.length - 1].date);
   const dateRange = maxDate - minDate || 1;
@@ -237,27 +239,44 @@ function PortfolioChart({ items }) {
   const scaleX = (date) => padding.left + ((new Date(date) - minDate) / dateRange) * chartWidth;
   const scaleY = (value) => padding.top + chartHeight - (value / maxValue) * chartHeight;
 
-  // Generate path
-  const linePath = dataPoints.map((d, i) =>
+  // Invested line path
+  const investedPath = dataPoints.map((d, i) =>
     `${i === 0 ? 'M' : 'L'} ${scaleX(d.date)} ${scaleY(d.invested)}`
   ).join(' ');
 
-  // Area under curve
-  const areaPath = linePath +
+  // Area under invested curve
+  const investedArea = investedPath +
     ` L ${scaleX(dataPoints[dataPoints.length - 1].date)} ${scaleY(0)}` +
     ` L ${scaleX(dataPoints[0].date)} ${scaleY(0)} Z`;
 
-  const currentValue = dataPoints[dataPoints.length - 1]?.currentValue || 0;
-  const totalInvested = dataPoints[dataPoints.length - 1]?.invested || 0;
   const isProfit = currentValue >= totalInvested;
+  const pnlColor = isProfit ? P.success : P.danger;
+
+  // Date labels for x-axis
+  const firstDate = new Date(dataPoints[0].date + "T12:00:00");
+  const lastDate = new Date(dataPoints[dataPoints.length - 1].date + "T12:00:00");
+  const firstLabel = firstDate.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+  const lastLabel = lastDate.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
 
   return (
     <Card style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 12, letterSpacing: 1 }}>
-        EVOLUTION PORTFOLIO
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, letterSpacing: 1 }}>
+          EVOLUTION PORTFOLIO
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 10, height: 3, background: P.primary, borderRadius: 2 }} />
+            <span style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft }}>Investi</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 8, height: 8, background: pnlColor, borderRadius: "50%" }} />
+            <span style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft }}>Valeur</span>
+          </div>
+        </div>
       </div>
 
-      <svg width={width} height={height} style={{ display: "block", maxWidth: "100%" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} style={{ display: "block", width: "100%", height: "auto" }}>
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map(pct => (
           <g key={pct}>
@@ -268,71 +287,91 @@ function PortfolioChart({ items }) {
               y2={scaleY(maxValue * pct)}
               stroke={P.borderLight}
               strokeDasharray="4 2"
+              strokeWidth={0.5}
             />
             <text
               x={padding.left - 8}
               y={scaleY(maxValue * pct)}
-              fontSize={10}
+              fontSize={11}
               fontFamily={BODY_FONT}
               fill={P.soft}
               textAnchor="end"
               dominantBaseline="middle"
             >
-              {fmt(maxValue * pct).replace(/[^\d]/g, '')}
+              {Math.round(maxValue * pct)}€
             </text>
           </g>
         ))}
 
-        {/* Area fill */}
-        <path d={areaPath} fill={isProfit ? `${P.success}20` : `${P.danger}20`} />
+        {/* X-axis date labels */}
+        <text x={padding.left} y={height - 6} fontSize={10} fontFamily={BODY_FONT} fill={P.soft} textAnchor="start">{firstLabel}</text>
+        <text x={width - padding.right} y={height - 6} fontSize={10} fontFamily={BODY_FONT} fill={P.soft} textAnchor="end">{lastLabel}</text>
 
-        {/* Line */}
+        {/* Area fill for invested */}
+        <path d={investedArea} fill={`${P.primary}12`} />
+
+        {/* Invested line */}
         <path
-          d={linePath}
+          d={investedPath}
           fill="none"
-          stroke={isProfit ? P.success : P.danger}
-          strokeWidth={3}
+          stroke={P.primary}
+          strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
+          strokeDasharray="6 3"
+          opacity={0.7}
         />
 
-        {/* Data points */}
+        {/* Data points on invested line */}
         {dataPoints.map((d, i) => (
           <circle
             key={i}
             cx={scaleX(d.date)}
             cy={scaleY(d.invested)}
-            r={4}
+            r={3}
             fill={P.card}
-            stroke={isProfit ? P.success : P.danger}
-            strokeWidth={2}
+            stroke={P.primary}
+            strokeWidth={1.5}
           />
         ))}
 
-        {/* Current value indicator */}
+        {/* Current value indicator (big dot) */}
         {currentValue > 0 && (
-          <circle
-            cx={scaleX(dataPoints[dataPoints.length - 1].date)}
-            cy={scaleY(currentValue)}
-            r={6}
-            fill={isProfit ? P.success : P.danger}
-            stroke={P.card}
-            strokeWidth={2}
-          />
+          <g>
+            {/* Dashed line from invested to current value */}
+            <line
+              x1={scaleX(dataPoints[dataPoints.length - 1].date)}
+              y1={scaleY(totalInvested)}
+              x2={scaleX(dataPoints[dataPoints.length - 1].date)}
+              y2={scaleY(currentValue)}
+              stroke={pnlColor}
+              strokeWidth={1.5}
+              strokeDasharray="3 2"
+              opacity={0.5}
+            />
+            <circle
+              cx={scaleX(dataPoints[dataPoints.length - 1].date)}
+              cy={scaleY(currentValue)}
+              r={7}
+              fill={pnlColor}
+              stroke={P.card}
+              strokeWidth={2.5}
+            />
+            {/* Value label */}
+            <text
+              x={scaleX(dataPoints[dataPoints.length - 1].date) - 8}
+              y={scaleY(currentValue) - 12}
+              fontSize={11}
+              fontFamily={BODY_FONT}
+              fontWeight={700}
+              fill={pnlColor}
+              textAnchor="end"
+            >
+              {fmt(currentValue)}
+            </text>
+          </g>
         )}
       </svg>
-
-      {/* Legend */}
-      <div style={{ display: "flex", gap: 16, marginTop: 12, justifyContent: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 12, height: 3, background: isProfit ? P.success : P.danger, borderRadius: 2 }} />
-          <span style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>Investi</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 8, height: 8, background: isProfit ? P.success : P.danger, borderRadius: "50%" }} />
-          <span style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>Valeur actuelle</span>
-        </div>
-      </div>
     </Card>
   );
 }
@@ -519,14 +558,16 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
     try {
       // Call Supabase Edge Function with auth token
       const { data: { session: s } } = await supabase.auth.getSession();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ccunqfmjzwfcavhbphgj.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdW5xZm1qendmY2F2aGJwaGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjMzMDksImV4cCI6MjA4NjE5OTMwOX0.jnUgnA6hrcDWHcwRehjH0-KQN5z7s78_A9fDhlPuCZc';
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-price`,
+        `${supabaseUrl}/functions/v1/ebay-price`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${s?.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "apikey": anonKey,
           },
           body: JSON.stringify({ query }),
         }
@@ -598,29 +639,29 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           ]),
           { label: isSold ? "P&L réel" : "P&L estimé", value: `${isUp ? "+" : ""}${fmt(totalPnL)}`, sub: isSold && realizedPnL !== 0 ? `Réalisé: ${realizedPnL >= 0 ? "+" : ""}${fmt(realizedPnL)}` : `${isUp ? "+" : ""}${((totalPnL / totalCost(item)) * 100).toFixed(1)}%`, hl: true, isUp },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
+          <div key={i} style={{ background: P.bg, borderRadius: 10, padding: 14, border: `1px solid ${P.borderLight}` }}>
             <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: s.hl ? (s.isUp ? "#16a34a" : "#dc2626") : P.text }}>{s.value}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: s.hl ? (s.isUp ? P.success : P.danger) : P.text }}>{s.value}</div>
             <div style={{ fontSize: 11, color: P.soft, marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Prix editable */}
-      <div style={{ background: "#f8fafc", borderRadius: 10, padding: "14px 16px", marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: P.bg, borderRadius: 10, padding: "14px 16px", marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between", border: `1px solid ${P.borderLight}` }}>
         <div>
           <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>Prix actuel</div>
           {!editingPrice ? <div style={{ fontSize: 24, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div> : (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} autoFocus onKeyDown={(e) => { if (e.key === "Enter") savePrice(); }}
-                style={{ width: 90, padding: "6px 10px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 18, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: 90, padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${P.borderLight}`, fontSize: 18, fontWeight: 700, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: P.card, color: P.text }} />
               <span style={{ fontSize: 15, color: P.soft }}>€</span>
               <button onClick={savePrice} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: P.primary, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
               <button onClick={() => setEditingPrice(false)} style={{ fontSize: 14, color: P.soft, background: "transparent", border: "none", cursor: "pointer" }}>✕</button>
             </div>
           )}
         </div>
-        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.primary, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
+        {!editingPrice && <button onClick={() => { setEditingPrice(true); setEditPrice(String(item.currentPrice)); }} style={{ fontSize: 13, fontWeight: 600, color: P.primary, background: P.bg, border: `1px solid ${P.borderLight}`, borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>✎ Modifier</button>}
       </div>
 
       {/* Target Price Alert */}
@@ -751,7 +792,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 
       {/* Price History Chart */}
       {item.priceHistory && item.priceHistory.length > 1 && (
-        <div style={{ background: "#f8fafc", borderRadius: 10, padding: "14px 16px", marginBottom: 18 }}>
+        <div style={{ background: P.bg, borderRadius: 10, padding: "14px 16px", marginBottom: 18, border: `1px solid ${P.borderLight}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, textTransform: "uppercase" }}>Historique des prix</div>
             <button onClick={() => setShowPriceHistory(!showPriceHistory)} style={{ fontSize: 12, color: P.primary, background: "none", border: "none", cursor: "pointer", fontFamily: BODY_FONT }}>
@@ -778,13 +819,13 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           {[...item.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tx) => {
             if (editingTxId === tx.id) {
               return (
-                <div key={tx.id} style={{ background: "#f1f5f9", borderRadius: 12, padding: "12px 14px" }}>
+                <div key={tx.id} style={{ background: P.bg, borderRadius: 12, padding: "12px 14px", border: `1px solid ${P.borderLight}` }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
                     {[{ key: "source", label: "Où acheté", type: "text" }, { key: "date", label: "Date", type: "date" }, { key: "price", label: "Prix (€)", type: "number" }, { key: "quantity", label: "Quantité", type: "number" }].map((f) => (
                       <div key={f.key}>
                         <div style={{ fontSize: 11, color: P.soft, fontWeight: 500, marginBottom: 4 }}>{f.label}</div>
                         <input type={f.type} value={editTx[f.key]} onChange={(e) => setEditTx({ ...editTx, [f.key]: e.target.value })}
-                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #d1c4e9", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#fff", color: P.text }} />
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1.5px solid ${P.borderLight}`, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: P.card, color: P.text }} />
                       </div>
                     ))}
                   </div>
@@ -798,8 +839,8 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
             }
             return (
               <div key={tx.id} onClick={() => { setEditingTxId(tx.id); setEditTx({ source: tx.source, date: tx.date, price: String(tx.price), quantity: String(tx.quantity) }); }}
-                style={{ display: "flex", alignItems: "center", gap: 12, background: "#f8fafc", borderRadius: 12, padding: "10px 14px", cursor: "pointer" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}>
+                style={{ display: "flex", alignItems: "center", gap: 12, background: P.bg, borderRadius: 12, padding: "10px 14px", cursor: "pointer", border: `1px solid ${P.borderLight}` }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = P.card)} onMouseLeave={(e) => (e.currentTarget.style.background = P.bg)}>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600, color: P.text }}>{tx.source}</div><div style={{ fontSize: 12, color: P.soft }}>{fmtDate(tx.date)} · Qté : {tx.quantity}</div></div>
                 <div style={{ textAlign: "right" }}><div style={{ fontSize: 16, fontWeight: 700, color: P.text }}>{fmt(tx.price)}</div><div style={{ fontSize: 11, color: P.soft }}>/ unité</div></div>
                 <div style={{ fontSize: 14, color: P.soft }}>›</div>
@@ -877,7 +918,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       )}
 
       {/* Nouvelle transaction */}
-      <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16 }}>
+      <div style={{ background: P.bg, borderRadius: 10, padding: 16, border: `1px solid ${P.borderLight}` }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: P.text, marginBottom: 12 }}>+ Nouvel achat</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Input label="Où acheté" type="text" placeholder="Amazon..." value={newTx.source} onChange={(e) => setNewTx({ ...newTx, source: e.target.value })} />
@@ -885,7 +926,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
           <Input label="Prix (€)" type="number" placeholder="180" value={newTx.price} onChange={(e) => setNewTx({ ...newTx, price: e.target.value })} />
           <Input label="Quantité" type="number" placeholder="1" value={newTx.quantity} onChange={(e) => setNewTx({ ...newTx, quantity: e.target.value })} />
         </div>
-        <button onClick={addTx} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>Ajouter achat</button>
+        <button onClick={addTx} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: P.border, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>Ajouter achat</button>
       </div>
     </Modal>
   );
@@ -902,19 +943,36 @@ function WalletTab({ items, setItems, events }) {
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all"); // all, sealed, graded, raw
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all"); // all, profit, loss, sold
   const [sortBy, setSortBy] = useState("name"); // name, value, pnl, date
 
-  // Available types from items
-  const itemTypes = useMemo(() => {
-    const types = [...new Set(items.map(i => i.type))];
-    return types.sort();
+  // Category counts for filter tabs
+  const categoryCounts = useMemo(() => {
+    const counts = { all: items.length, sealed: 0, graded: 0, raw: 0 };
+    items.forEach(i => {
+      const cat = i.category || "sealed";
+      if (counts[cat] !== undefined) counts[cat]++;
+    });
+    return counts;
   }, [items]);
+
+  // Available types from items (filtered by selected category)
+  const itemTypes = useMemo(() => {
+    const filtered = filterCategory === "all" ? items : items.filter(i => (i.category || "sealed") === filterCategory);
+    const types = [...new Set(filtered.map(i => i.type))];
+    return types.sort();
+  }, [items, filterCategory]);
 
   // Filtered and sorted items
   const filteredItems = useMemo(() => {
     let result = items;
+
+    // Category filter
+    if (filterCategory !== "all") {
+      result = result.filter(i => (i.category || "sealed") === filterCategory);
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -1008,14 +1066,15 @@ function WalletTab({ items, setItems, events }) {
   const fetchEbayPrice = async (query) => {
     if (!query || query.trim().length < 3) return null;
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ccunqfmjzwfcavhbphgj.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdW5xZm1qendmY2F2aGJwaGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjMzMDksImV4cCI6MjA4NjE5OTMwOX0.jnUgnA6hrcDWHcwRehjH0-KQN5z7s78_A9fDhlPuCZc';
       const { data: { session: s } } = await supabase.auth.getSession();
       const res = await fetch(`${supabaseUrl}/functions/v1/ebay-price`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${s?.access_token}`,
-          "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+          "apikey": anonKey,
         },
         body: JSON.stringify({ query: query.trim() }),
       });
@@ -1222,27 +1281,37 @@ function WalletTab({ items, setItems, events }) {
         </div>
       )}
 
-      {/* RETRO OVERVIEW CARD - Game Boy style */}
+      {/* RETRO OVERVIEW CARD - Gradient style */}
       <div style={{
-        background: P.primary,
-        border: `4px solid ${P.border}`,
-        padding: "24px",
+        background: `linear-gradient(135deg, ${P.primary} 0%, #4a5ab8 50%, #3949ab 100%)`,
+        border: `3px solid ${P.border}`,
+        padding: "28px 24px",
         color: "#fff",
         marginBottom: 20,
-        boxShadow: "0 4px 20px rgba(92, 107, 192, 0.3)",
-        borderRadius: 12,
+        boxShadow: "0 6px 24px rgba(92, 107, 192, 0.35)",
+        borderRadius: 16,
+        position: "relative",
+        overflow: "hidden",
       }}>
-        <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>VALEUR TOTALE</div>
-        <div style={{ fontSize: 32, fontFamily: BODY_FONT, fontWeight: 700 }}>{fmt(totalCur)}</div>
-        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        {/* Decorative pixel dots */}
+        <div style={{ position: "absolute", top: 12, right: 16, opacity: 0.15, fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 4 }}>* * *</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, letterSpacing: 1.5, opacity: 0.7, marginBottom: 6 }}>VALEUR TOTALE</div>
+            <div style={{ fontSize: 36, fontFamily: BODY_FONT, fontWeight: 700, lineHeight: 1 }}>{fmt(totalCur)}</div>
+          </div>
+          <Pokeball size={44} style={{ opacity: 0.2 }} />
+        </div>
+        <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{
-            background: totalRealPnL >= 0 ? P.success : P.danger,
+            background: totalRealPnL >= 0 ? "rgba(102, 187, 106, 0.9)" : "rgba(239, 83, 80, 0.9)",
             color: "#fff",
-            padding: "8px 14px",
-            borderRadius: 8,
+            padding: "8px 16px",
+            borderRadius: 10,
             fontSize: 16,
             fontFamily: BODY_FONT,
             fontWeight: 700,
+            backdropFilter: "blur(4px)",
           }}>
             {totalRealPnL >= 0 ? "+" : ""}{fmt(totalRealPnL)} ({totalRealPnL >= 0 ? "+" : ""}{totalPnLPct}%)
           </span>
@@ -1250,25 +1319,70 @@ function WalletTab({ items, setItems, events }) {
         </div>
       </div>
 
-      {/* Stats row - Retro boxes */}
+      {/* Stats row - Modern retro boxes */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
         {[
-          { label: "ITEMS", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text, bg: P.card },
-          { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.success },
-          { label: "PERTE", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#fff", bg: P.danger },
+          { label: "ITEMS", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text, bg: P.card, accent: P.primary },
+          { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.success, accent: P.success },
+          { label: "PERTE", value: items.filter((i) => getItemPnL(i) < 0).length, color: "#fff", bg: P.danger, accent: P.danger },
         ].map((s) => (
           <div key={s.label} style={{
             background: s.bg,
-            border: `3px solid ${P.border}`,
-            padding: "14px 10px",
+            border: `2px solid ${P.border}`,
+            borderRadius: 12,
+            padding: "16px 10px",
             textAlign: "center",
-            boxShadow: "3px 3px 0 rgba(0,0,0,0.2)",
+            boxShadow: `3px 3px 0 ${s.accent}20`,
+            position: "relative",
+            overflow: "hidden",
           }}>
-            <div style={{ fontSize: 28, fontFamily: BODY_FONT, fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: s.color, letterSpacing: 0.5, marginTop: 4, opacity: 0.8 }}>{s.label}</div>
+            <div style={{ position: "absolute", top: -6, right: -6, width: 24, height: 24, borderRadius: "50%", background: `${s.accent}15` }} />
+            <div style={{ fontSize: 30, fontFamily: BODY_FONT, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: s.color, letterSpacing: 0.5, marginTop: 4, opacity: 0.85 }}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Category breakdown */}
+      {items.length > 0 && (categoryCounts.sealed > 0 || categoryCounts.graded > 0 || categoryCounts.raw > 0) && (
+        <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
+          <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 14, letterSpacing: 1 }}>REPARTITION PAR CATEGORIE</div>
+          <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+            {[
+              { key: "sealed", label: "Scellés", icon: "📦", color: P.primary },
+              { key: "graded", label: "Gradées", icon: "🏆", color: "#f59e0b" },
+              { key: "raw", label: "Raw", icon: "🃏", color: "#6366f1" },
+            ].filter(cat => categoryCounts[cat.key] > 0).map(cat => {
+              const catItems = items.filter(i => (i.category || "sealed") === cat.key);
+              const catValue = catItems.reduce((s, i) => s + i.currentPrice * totalQty(i), 0);
+              const catPnL = catItems.reduce((s, i) => s + getItemPnL(i), 0);
+              const pctOfTotal = totalCur > 0 ? (catValue / totalCur * 100) : 0;
+              return (
+                <div key={cat.key} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>{cat.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 15, fontFamily: BODY_FONT, fontWeight: 600, color: P.text }}>
+                        {cat.label} <span style={{ color: P.soft, fontWeight: 400 }}>({categoryCounts[cat.key]})</span>
+                      </span>
+                      <span style={{ fontSize: 16, fontFamily: BODY_FONT, fontWeight: 700, color: P.text }}>{fmt(catValue)}</span>
+                    </div>
+                    <div style={{ width: "100%", height: 8, background: P.bg, borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.max(pctOfTotal, 2)}%`, height: "100%", background: cat.color, borderRadius: 4, transition: "width 0.3s ease" }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                      <span style={{ fontSize: 13, fontFamily: BODY_FONT, color: P.soft }}>{pctOfTotal.toFixed(0)}% du portfolio</span>
+                      <span style={{ fontSize: 13, fontFamily: BODY_FONT, fontWeight: 600, color: catPnL >= 0 ? P.success : P.danger }}>
+                        {catPnL >= 0 ? "+" : ""}{fmt(catPnL)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Portfolio Evolution Chart */}
       {items.length > 0 && <PortfolioChart items={items} />}
@@ -1277,29 +1391,74 @@ function WalletTab({ items, setItems, events }) {
       {items.length > 0 && (
         <Card style={{ marginBottom: 20, padding: "16px 18px" }}>
           <div style={{ fontSize: 8, fontFamily: PIXEL_FONT, color: P.text, marginBottom: 14, letterSpacing: 1 }}>STATISTIQUES</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             {bestItem && getItemPnLPct(bestItem) > 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>MEILLEUR</div>
+              <div style={{ background: `${P.success}10`, borderRadius: 10, padding: "12px 14px" }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.success, letterSpacing: 0.5, marginBottom: 6 }}>MEILLEUR</div>
                 <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestItem.name}</div>
-                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.success }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
+                <div style={{ fontSize: 20, fontFamily: BODY_FONT, fontWeight: 700, color: P.success }}>+{getItemPnLPct(bestItem).toFixed(1)}%</div>
               </div>
             )}
             {worstItem && getItemPnLPct(worstItem) < 0 && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>PIRE</div>
+              <div style={{ background: `${P.danger}10`, borderRadius: 10, padding: "12px 14px" }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.danger, letterSpacing: 0.5, marginBottom: 6 }}>PIRE</div>
                 <div style={{ fontSize: 16, fontFamily: BODY_FONT, color: P.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{worstItem.name}</div>
-                <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.danger }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
+                <div style={{ fontSize: 20, fontFamily: BODY_FONT, fontWeight: 700, color: P.danger }}>{getItemPnLPct(worstItem).toFixed(1)}%</div>
               </div>
             )}
             {hasAnySales && (
-              <div style={{ flex: "1 1 45%", minWidth: 120 }}>
-                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 6 }}>P&L REALISE</div>
-                <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: realizedPnL >= 0 ? P.success : P.danger }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
+              <div style={{ background: `${P.primary}10`, borderRadius: 10, padding: "12px 14px", gridColumn: bestItem && worstItem ? "1 / -1" : "auto" }}>
+                <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.primary, letterSpacing: 0.5, marginBottom: 6 }}>P&L REALISE</div>
+                <div style={{ fontSize: 24, fontFamily: BODY_FONT, fontWeight: 700, color: realizedPnL >= 0 ? P.success : P.danger }}>{realizedPnL >= 0 ? "+" : ""}{fmt(realizedPnL)}</div>
               </div>
             )}
           </div>
         </Card>
+      )}
+
+      {/* Category filter tabs */}
+      {items.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
+          {[
+            { key: "all", label: "Tous", icon: "🎴" },
+            { key: "sealed", label: "Scellés", icon: "📦" },
+            { key: "graded", label: "Gradées", icon: "🏆" },
+            { key: "raw", label: "Raw", icon: "🃏" },
+          ].map(cat => {
+            const isActive = filterCategory === cat.key;
+            const count = categoryCounts[cat.key] || 0;
+            return (
+              <button key={cat.key} onClick={() => { setFilterCategory(cat.key); setFilterType("all"); }}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: isActive ? `2px solid ${P.primary}` : `2px solid ${P.borderLight}`,
+                  background: isActive ? P.primary : P.card,
+                  color: isActive ? "#fff" : P.text,
+                  fontSize: 15,
+                  fontFamily: BODY_FONT,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s ease",
+                }}>
+                <span style={{ fontSize: 14 }}>{cat.icon}</span>
+                {cat.label}
+                <span style={{
+                  fontSize: 12,
+                  fontFamily: BODY_FONT,
+                  background: isActive ? "rgba(255,255,255,0.25)" : P.bg,
+                  padding: "2px 7px",
+                  borderRadius: 8,
+                  fontWeight: 700,
+                }}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {/* Search and Filter Bar */}
@@ -1393,7 +1552,7 @@ function WalletTab({ items, setItems, events }) {
           </div>
 
           {/* Results count */}
-          {(searchQuery || filterType !== "all" || filterStatus !== "all") && (
+          {(searchQuery || filterType !== "all" || filterStatus !== "all" || filterCategory !== "all") && (
             <div style={{ marginTop: 10, fontSize: 14, fontFamily: BODY_FONT, color: P.soft }}>
               {filteredItems.length} résultat{filteredItems.length !== 1 ? "s" : ""}
               {searchQuery && ` pour "${searchQuery}"`}
@@ -1578,7 +1737,7 @@ function WalletTab({ items, setItems, events }) {
           {Object.keys(releasesByYear).length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3, display: "block", marginBottom: 8 }}>Sorties récentes (cliquer pour sélectionner)</label>
-              <div style={{ maxHeight: 180, overflowY: "auto", background: "#f8fafc", borderRadius: 12, padding: 10 }}>
+              <div style={{ maxHeight: 180, overflowY: "auto", background: P.bg, borderRadius: 12, padding: 10 }}>
                 {Object.entries(releasesByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearEvents]) => (
                   <div key={year} style={{ marginBottom: 10 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: P.primary, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
@@ -1599,14 +1758,14 @@ function WalletTab({ items, setItems, events }) {
                             }}
                             style={{
                               display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8,
-                              background: isSelected ? "#f1f5f9" : "transparent",
+                              background: isSelected ? P.bg : "transparent",
                               border: isSelected ? `1.5px solid ${P.primary}` : "1.5px solid transparent",
                               cursor: "pointer", transition: "all 0.15s"
                             }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#f1f5f9"; }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = P.bg; }}
                             onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                           >
-                            <span style={{ fontSize: 9, fontWeight: 600, color: P.primary, background: "#f1f5f9", padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: P.primary, background: P.bg, padding: "2px 6px", borderRadius: 6, textTransform: "uppercase" }}>{monthLabel}</span>
                             <span style={{ fontSize: 11, fontWeight: 500, color: P.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {ev.title.replace(/^Sortie:\s*/i, "")}
                             </span>
