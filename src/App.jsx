@@ -1,374 +1,29 @@
-import { useState, useEffect, useMemo, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "./supabase";
+import {
+  PIXEL_FONT, BODY_FONT,
+  useTheme, ThemeProvider, ToastProvider, useToast,
+  useIsDesktop, useIsWide,
+  fmt, fmtDate, today, isValidUrl,
+  MAX_NAME_LENGTH, MAX_NOTE_LENGTH, MAX_URL_LENGTH,
+  INIT, TABS,
+} from "./theme.jsx";
+import {
+  Pokeball, Input, AddButton, Card, Modal, Stars,
+} from "./components/shared.jsx";
 
-// ═══════════════════════════════════════════════════════════
-// THEME SYSTEM - Light & Dark Mode
-// ═══════════════════════════════════════════════════════════
-const THEMES = {
-  light: {
-    bg: "#f8f9fa",
-    card: "#ffffff",
-    shadow: "0 2px 8px rgba(0,0,0,0.06)",
-    primary: "#5c6bc0",
-    secondary: "#78909c",
-    success: "#66bb6a",
-    warning: "#ffb74d",
-    danger: "#ef5350",
-    text: "#37474f",
-    soft: "#90a4ae",
-    accent: "#5c6bc0",
-    border: "#455a64",
-    borderLight: "#cfd8dc",
-  },
-  dark: {
-    bg: "#1a1a2e",
-    card: "#16213e",
-    shadow: "0 2px 12px rgba(0,0,0,0.3)",
-    primary: "#7c8ce0",
-    secondary: "#8eacbb",
-    success: "#81c784",
-    warning: "#ffcc80",
-    danger: "#ef7070",
-    text: "#e8eaed",
-    soft: "#9aa0a6",
-    accent: "#7c8ce0",
-    border: "#3d4f6f",
-    borderLight: "#2d3a5a",
-  }
-};
+// Import P from theme - this is a live binding that updates with theme changes
+import { P } from "./theme.jsx";
 
-// Theme Context
-const ThemeContext = createContext();
-const useTheme = () => useContext(ThemeContext);
+// Theme, Toast, hooks, utilities, and shared components are all imported from theme.jsx and ./components/shared.jsx
 
-// Default to light theme (will be overridden by ThemeProvider)
-let P = THEMES.light;
 
-// Pixel font family
-const PIXEL_FONT = "'Press Start 2P', monospace";
-const BODY_FONT = "'VT323', monospace";
 
-// Modern pixel border - softer with slight radius
-const pixelBorder = (color = P.border, width = 2) => ({
-  border: `${width}px solid ${color}`,
-  borderRadius: 4,
-});
 
-// Retro button style
-const retroButtonStyle = (isActive = false, color = P.primary) => ({
-  padding: "10px 16px",
-  border: `3px solid ${P.border}`,
-  borderRadius: 0,
-  background: isActive ? color : P.card,
-  color: isActive ? "#fff" : P.text,
-  fontSize: 12,
-  fontFamily: PIXEL_FONT,
-  cursor: "pointer",
-  textTransform: "uppercase",
-  letterSpacing: 1,
-  transition: "none",
-  boxShadow: isActive ? "inset 2px 2px 0 rgba(0,0,0,0.2)" : "3px 3px 0 rgba(0,0,0,0.3)",
-});
 
-// ═══════════════════════════════════════════════════════════
-// RESPONSIVE HOOK
-// ═══════════════════════════════════════════════════════════
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.matchMedia(query).matches;
-    }
-    return false;
-  });
 
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const listener = (e) => setMatches(e.matches);
-    media.addEventListener("change", listener);
-    setMatches(media.matches);
-    return () => media.removeEventListener("change", listener);
-  }, [query]);
 
-  return matches;
-}
 
-const useIsDesktop = () => useMediaQuery("(min-width: 900px)");
-const useIsWide = () => useMediaQuery("(min-width: 1200px)");
-
-// ═══════════════════════════════════════════════════════════
-// TOAST NOTIFICATION SYSTEM
-// ═══════════════════════════════════════════════════════════
-const ToastContext = createContext();
-
-function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
-
-  const addToast = useCallback((message, type = "success", duration = 3000) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, duration);
-  }, []);
-
-  const toast = useMemo(() => ({
-    success: (msg) => addToast(msg, "success"),
-    error: (msg) => addToast(msg, "error"),
-    info: (msg) => addToast(msg, "info"),
-    warning: (msg) => addToast(msg, "warning"),
-  }), [addToast]);
-
-  return (
-    <ToastContext.Provider value={toast}>
-      {children}
-      {/* Toast container */}
-      <div style={{
-        position: "fixed",
-        top: 20,
-        right: 20,
-        zIndex: 9999,
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        pointerEvents: "none",
-      }}>
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              padding: "14px 20px",
-              borderRadius: 10,
-              background: t.type === "success" ? P.success : t.type === "error" ? P.danger : t.type === "warning" ? P.warning : P.primary,
-              color: "#fff",
-              fontFamily: BODY_FONT,
-              fontSize: 18,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-              animation: "slideIn 0.3s ease",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              pointerEvents: "auto",
-            }}
-          >
-            <span style={{ fontSize: 20 }}>
-              {t.type === "success" ? "✓" : t.type === "error" ? "✕" : t.type === "warning" ? "⚠" : "ℹ"}
-            </span>
-            {t.message}
-          </div>
-        ))}
-      </div>
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
-    </ToastContext.Provider>
-  );
-}
-
-const useToast = () => useContext(ToastContext);
-
-// ═══════════════════════════════════════════════════════════
-// THEME PROVIDER COMPONENT
-// ═══════════════════════════════════════════════════════════
-function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("hexuo-theme") || "light";
-    }
-    return "light";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("hexuo-theme", theme);
-    P = THEMES[theme];
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
-  }, []);
-
-  // Update P on mount
-  P = THEMES[theme];
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, P: THEMES[theme] }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-const fmt = (n) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0 });
-const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
-const today = () => new Date().toISOString().split("T")[0];
-
-// ═══════════════════════════════════════════════════════════
-// INITIAL DATA
-// ═══════════════════════════════════════════════════════════
-const INIT = {
-  items: [],
-  events: [],
-  spots: [],
-  resources: [],
-  wishlist: [],
-};
-
-// ═══════════════════════════════════════════════════════════
-// SHARED COMPONENTS - RETRO PIXEL STYLE
-// ═══════════════════════════════════════════════════════════
-
-// Pokeball decoration
-function Pokeball({ size = 24, style: extra }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={extra}>
-      <circle cx="50" cy="50" r="48" fill="#fff" stroke={P.border} strokeWidth="4"/>
-      <path d="M 2 50 H 98" stroke={P.border} strokeWidth="4"/>
-      <circle cx="50" cy="50" r="16" fill="#fff" stroke={P.border} strokeWidth="4"/>
-      <circle cx="50" cy="50" r="8" fill={P.border}/>
-      <path d="M 2 50 A 48 48 0 0 0 98 50" fill={P.primary}/>
-    </svg>
-  );
-}
-
-// Pixel sparkle animation
-function PixelSparkle({ style }) {
-  return (
-    <div style={{
-      position: "absolute",
-      width: 8,
-      height: 8,
-      background: P.warning,
-      animation: "sparkle 0.6s ease-in-out infinite",
-      ...style
-    }} />
-  );
-}
-
-function Input({ label, type, placeholder, value, onChange, style: extraStyle }) {
-  return (
-    <div style={{ marginBottom: 14, ...extraStyle }}>
-      <label style={{
-        fontSize: 10,
-        color: P.text,
-        fontFamily: PIXEL_FONT,
-        letterSpacing: 0.5,
-        marginBottom: 8,
-        display: "block",
-        textTransform: "uppercase"
-      }}>{label}</label>
-      <input type={type} placeholder={placeholder} value={value} onChange={onChange}
-        style={{
-          display: "block",
-          width: "100%",
-          padding: "12px 14px",
-          border: `3px solid ${P.border}`,
-          borderRadius: 0,
-          fontSize: 18,
-          fontFamily: BODY_FONT,
-          outline: "none",
-          boxSizing: "border-box",
-          background: P.card,
-          color: P.text
-        }}
-        onFocus={(e) => (e.target.style.borderColor = P.primary)}
-        onBlur={(e) => (e.target.style.borderColor = P.borderLight)}
-      />
-    </div>
-  );
-}
-
-function AddButton({ onClick }) {
-  return (
-    <button onClick={onClick}
-      style={{
-        width: "100%",
-        padding: "16px",
-        border: `3px dashed ${P.border}`,
-        borderRadius: 0,
-        background: "transparent",
-        color: P.text,
-        fontSize: 10,
-        fontFamily: PIXEL_FONT,
-        cursor: "pointer",
-        textTransform: "uppercase",
-        letterSpacing: 1,
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = P.primary; e.currentTarget.style.color = P.primary; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = P.borderLight; e.currentTarget.style.color = P.soft; }}
-    >+ Ajouter</button>
-  );
-}
-
-function Card({ children, onClick, style: extra }) {
-  return (
-    <div onClick={onClick}
-      style={{
-        background: P.card,
-        border: `2px solid ${P.borderLight}`,
-        borderRadius: 8,
-        padding: "16px 18px",
-        cursor: onClick ? "pointer" : "default",
-        boxShadow: P.shadow,
-        transition: "all 0.15s ease",
-        ...extra
-      }}
-      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; e.currentTarget.style.borderColor = P.primary; }}}
-      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = P.shadow; e.currentTarget.style.borderColor = P.borderLight; }}}
-    >{children}</div>
-  );
-}
-
-function Modal({ onClose, children, title }) {
-  const isDesktop = useIsDesktop();
-
-  return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(55, 71, 79, 0.6)",
-        backdropFilter: "blur(4px)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: isDesktop ? "center" : "flex-end",
-        justifyContent: "center",
-        padding: isDesktop ? 20 : 0,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: P.card,
-          border: `2px solid ${P.borderLight}`,
-          borderRadius: isDesktop ? 12 : "16px 16px 0 0",
-          width: "100%",
-          maxWidth: isDesktop ? 520 : 560,
-          maxHeight: isDesktop ? "85vh" : "90vh",
-          overflowY: "auto",
-          padding: isDesktop ? "24px 28px" : "20px 20px 100px",
-          boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// Alias for backward compatibility
-const BottomModal = Modal;
-
-// Stars rating display - Pixel style
-function Stars({ rating, max = 5 }) {
-  return (
-    <span style={{ fontSize: 14, letterSpacing: 4, fontFamily: PIXEL_FONT }}>
-      {Array(max).fill(0).map((_, i) => (
-        <span key={i} style={{ color: i < rating ? P.warning : P.borderLight }}>*</span>
-      ))}
-    </span>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════
 // TAB: WALLET (portfolio)
@@ -407,17 +62,50 @@ const getItemPnLPct = (item) => {
   return (pnl / cost) * 100;
 };
 
-// Legacy function for display (uses current price only)
-const itemPnLPct = (item) => { const avg = avgPrice(item); return avg > 0 ? (((item.currentPrice - avg) / avg) * 100).toFixed(1) : "0.0"; };
 
-function TypeBadge({ type }) {
-  const map = {
-    "Ultra Premium Collection": { bg: P.warning, text: P.border, icon: "UPC" },
-    "Bundle": { bg: P.primary, text: "#fff", icon: "BDL" },
-    "Elite Trainer Box": { bg: P.danger, text: "#fff", icon: "ETB" },
-    "Collection Box": { bg: P.success, text: "#fff", icon: "BOX" }
-  };
-  const c = map[type] || { bg: P.borderLight, text: P.text, icon: "???" };
+// Grading organizations
+const GRADING_ORGS = {
+  PSA: { label: "PSA", color: "#dc2626", grades: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10] },
+  BGS: { label: "BGS", color: "#1d4ed8", grades: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10] },
+  CGC: { label: "CGC", color: "#059669", grades: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10] },
+};
+
+// Item categories and types
+const ITEM_CATEGORIES = {
+  sealed: {
+    label: "Scellé",
+    icon: "📦",
+    types: {
+      "Ultra Premium Collection": { bg: P.warning, text: P.border, icon: "UPC" },
+      "Bundle": { bg: P.primary, text: "#fff", icon: "BDL" },
+      "Elite Trainer Box": { bg: P.danger, text: "#fff", icon: "ETB" },
+      "Collection Box": { bg: P.success, text: "#fff", icon: "BOX" },
+      "Booster Box": { bg: "#8b5cf6", text: "#fff", icon: "BBX" },
+      "Blister": { bg: "#06b6d4", text: "#fff", icon: "BLS" },
+    }
+  },
+  graded: {
+    label: "Gradée",
+    icon: "🏆",
+    types: {
+      "Carte Gradée": { bg: "#f59e0b", text: "#fff", icon: "GRD" },
+    }
+  },
+  raw: {
+    label: "Raw",
+    icon: "🃏",
+    types: {
+      "Carte Raw": { bg: "#6366f1", text: "#fff", icon: "RAW" },
+    }
+  },
+};
+
+// Flat map of all types for quick lookup
+const ALL_ITEM_TYPES = Object.values(ITEM_CATEGORIES).reduce((acc, cat) => ({ ...acc, ...cat.types }), {});
+
+function TypeBadge({ type, grade, gradingOrg }) {
+  const c = ALL_ITEM_TYPES[type] || { bg: P.borderLight, text: P.text, icon: "???" };
+  const gradeLabel = gradingOrg && grade ? ` ${gradingOrg} ${grade}` : "";
   return (
     <span style={{
       fontSize: 8,
@@ -427,9 +115,11 @@ function TypeBadge({ type }) {
       background: c.bg,
       color: c.text,
       padding: "6px 10px",
-      border: `2px solid ${P.border}`,
-      display: "inline-block"
-    }}>{c.icon}</span>
+      borderRadius: 6,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+    }}>{c.icon}{gradeLabel}</span>
   );
 }
 
@@ -795,7 +485,7 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   const [editingEbayQuery, setEditingEbayQuery] = useState(false);
   const [loadingMarketPrice, setLoadingMarketPrice] = useState(false);
 
-  // Generate suggested eBay query from item name
+  // Generate suggested eBay query from item name and category
   const suggestEbayQuery = () => {
     const name = item.name.toLowerCase()
       .replace(/[éèê]/g, "e")
@@ -803,6 +493,12 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
       .replace(/[ùû]/g, "u")
       .replace(/[ôö]/g, "o")
       .replace(/[îï]/g, "i");
+    if (item.category === "graded" && item.gradingOrg && item.grade) {
+      return `pokemon ${name} ${item.gradingOrg} ${item.grade}`;
+    }
+    if (item.category === "raw") {
+      return `pokemon ${name} card`;
+    }
     return `pokemon ${name} sealed`;
   };
 
@@ -821,14 +517,16 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
 
     setLoadingMarketPrice(true);
     try {
-      // Call Supabase Edge Function
+      // Call Supabase Edge Function with auth token
+      const { data: { session: s } } = await supabase.auth.getSession();
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-price`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            "Authorization": `Bearer ${s?.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ query }),
         }
@@ -883,9 +581,9 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
   };
 
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-        <div><div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{item.name}</div><div style={{ marginTop: 8 }}><TypeBadge type={item.type} /></div></div>
+        <div><div style={{ fontSize: 20, fontWeight: 700, color: P.text }}>{item.name}</div><div style={{ marginTop: 8 }}><TypeBadge type={item.type} grade={item.grade} gradingOrg={item.gradingOrg} /></div></div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
       </div>
 
@@ -1189,14 +887,14 @@ function ItemDetailModal({ item, onClose, onUpdate }) {
         </div>
         <button onClick={addTx} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>Ajouter achat</button>
       </div>
-    </BottomModal>
+    </Modal>
   );
 }
 
 function WalletTab({ items, setItems, events }) {
   const [selectedId, setSelectedId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "" });
+  const [form, setForm] = useState({ name: "", category: "sealed", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "", ebayQuery: "", gradingOrg: "", grade: "" });
   const selectedItem = useMemo(() => items.find((i) => i.id === selectedId) || null, [items, selectedId]);
   const isDesktop = useIsDesktop();
   const isWide = useIsWide();
@@ -1306,17 +1004,50 @@ function WalletTab({ items, setItems, events }) {
 
   const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
 
+  // Fetch eBay price for a query
+  const fetchEbayPrice = async (query) => {
+    if (!query || query.trim().length < 3) return null;
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const { data: { session: s } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/functions/v1/ebay-price`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${s?.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch { return null; }
+  };
+
   const addItem = () => {
-    if (!form.name || Number(form.price) <= 0) {
-      toast?.error("Veuillez remplir tous les champs");
-      return;
-    }
+    if (!form.name.trim()) { toast?.error("Le nom est requis"); return; }
+    if (form.name.length > MAX_NAME_LENGTH) { toast?.error(`Le nom ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (Number(form.price) <= 0) { toast?.error("Le prix d'achat doit être supérieur à 0"); return; }
+    if (Number(form.quantity) <= 0) { toast?.error("La quantité doit être supérieure à 0"); return; }
+    if (form.imageUrl && !isValidUrl(form.imageUrl)) { toast?.error("L'URL de l'image n'est pas valide"); return; }
+    if (form.imageUrl && form.imageUrl.length > MAX_URL_LENGTH) { toast?.error("L'URL est trop longue"); return; }
+    if (form.category === "graded" && !form.gradingOrg) { toast?.error("Sélectionne l'organisme de grading"); return; }
+    if (form.category === "graded" && !form.grade) { toast?.error("Sélectionne la note"); return; }
     const newItem = {
       id: Date.now(),
-      name: form.name,
+      name: form.name.trim(),
       type: form.type,
+      category: form.category,
+      gradingOrg: form.category === "graded" ? form.gradingOrg : null,
+      grade: form.category === "graded" ? Number(form.grade) : null,
       currentPrice: Number(form.currentPrice) || Number(form.price),
       imageUrl: form.imageUrl || null,
+      ebayQuery: form.ebayQuery.trim() || null,
+      marketPrice: null,
+      marketPriceMin: null,
+      marketPriceMax: null,
+      marketPriceSalesCount: null,
+      marketPriceUpdatedAt: null,
       transactions: [{
         id: Date.now() + 1,
         date: form.date,
@@ -1326,9 +1057,27 @@ function WalletTab({ items, setItems, events }) {
       }]
     };
     setItems([...items, newItem]);
-    setForm({ name: "", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "" });
+    setForm({ name: "", category: "sealed", type: "Bundle", source: "", date: today(), price: "", quantity: "1", currentPrice: "", imageUrl: "", ebayQuery: "", gradingOrg: "", grade: "" });
     setShowForm(false);
-    toast?.success(`${form.name} ajouté !`);
+    toast?.success(`${form.name.trim()} ajouté !`);
+
+    // Auto-fetch eBay price in background if query provided
+    if (newItem.ebayQuery) {
+      fetchEbayPrice(newItem.ebayQuery).then(data => {
+        if (data && data.median) {
+          setItems(prev => prev.map(i => i.id === newItem.id ? {
+            ...i,
+            marketPrice: data.median,
+            marketPriceMin: data.min,
+            marketPriceMax: data.max,
+            marketPriceSalesCount: data.salesCount,
+            marketPriceUpdatedAt: data.updatedAt,
+            currentPrice: i.currentPrice || data.median,
+          } : i));
+          toast?.success(`Prix eBay: ${fmt(data.median)} (${data.salesCount} ventes)`);
+        }
+      });
+    }
   };
 
   const handleItemUpdate = (updated) => {
@@ -1434,8 +1183,12 @@ function WalletTab({ items, setItems, events }) {
       id: Date.now(),
       name: quickAdd.name,
       type: "Bundle",
+      category: "sealed",
+      gradingOrg: null,
+      grade: null,
       currentPrice: Number(quickAdd.price),
       imageUrl: null,
+      ebayQuery: null,
       priceHistory: [{ date: today(), price: Number(quickAdd.price) }],
       transactions: [{
         id: Date.now() + 1,
@@ -1746,7 +1499,22 @@ function WalletTab({ items, setItems, events }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 600, marginBottom: 6 }}>{item.name}</div>
                     <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      <TypeBadge type={item.type} />
+                      <TypeBadge type={item.type} grade={item.grade} gradingOrg={item.gradingOrg} />
+                      {item.marketPrice && (
+                        <span style={{
+                          fontSize: 8,
+                          fontFamily: PIXEL_FONT,
+                          background: P.primary,
+                          color: "#fff",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}>
+                          eBay {fmt(item.marketPrice)}
+                        </span>
+                      )}
                       {hasSales && (
                         <span style={{
                           fontSize: 8,
@@ -1853,18 +1621,141 @@ function WalletTab({ items, setItems, events }) {
             </div>
           )}
 
-          <Input label="Nom" type="text" placeholder="Ex: Elite Trainer Box..." value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          {/* Category selector */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 10, color: P.text, fontFamily: PIXEL_FONT, letterSpacing: 0.5, marginBottom: 8, display: "block", textTransform: "uppercase" }}>Catégorie</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {Object.entries(ITEM_CATEGORIES).map(([catKey, cat]) => (
+                <button key={catKey} onClick={() => {
+                  const firstType = Object.keys(cat.types)[0];
+                  setForm({ ...form, category: catKey, type: firstType, gradingOrg: catKey === "graded" ? "PSA" : "", grade: "" });
+                }}
+                  style={{
+                    flex: 1, padding: "12px 8px", borderRadius: 10,
+                    border: form.category === catKey ? `2px solid ${P.primary}` : `2px solid ${P.borderLight}`,
+                    background: form.category === catKey ? P.primary : P.card,
+                    color: form.category === catKey ? "#fff" : P.text,
+                    fontSize: 12, fontFamily: BODY_FONT, cursor: "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  }}>
+                  <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Input label="Nom" type="text" placeholder={form.category === "graded" ? "Ex: Dracaufeu VMAX Alt Art..." : form.category === "raw" ? "Ex: Pikachu VMAX 044/185..." : "Ex: Elite Trainer Box Écarlate et Violet..."} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+
+          {/* Type selector */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 10, color: P.text, fontFamily: PIXEL_FONT, letterSpacing: 0.5, marginBottom: 8, display: "block", textTransform: "uppercase" }}>Type</label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {Object.entries(ITEM_CATEGORIES[form.category]?.types || {}).map(([typeKey, typeVal]) => (
+                <button key={typeKey} onClick={() => setForm({ ...form, type: typeKey })}
+                  style={{
+                    padding: "8px 14px", borderRadius: 8,
+                    border: form.type === typeKey ? `2px solid ${typeVal.bg}` : `2px solid ${P.borderLight}`,
+                    background: form.type === typeKey ? typeVal.bg : P.card,
+                    color: form.type === typeKey ? typeVal.text : P.text,
+                    fontSize: 13, fontFamily: BODY_FONT, cursor: "pointer",
+                  }}>
+                  {typeVal.icon} {typeKey}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grading fields (only for graded cards) */}
+          {form.category === "graded" && (
+            <div style={{ marginBottom: 14, background: P.bg, borderRadius: 12, padding: "14px 16px", border: `1px solid ${P.borderLight}` }}>
+              <label style={{ fontSize: 10, color: P.text, fontFamily: PIXEL_FONT, letterSpacing: 0.5, marginBottom: 10, display: "block", textTransform: "uppercase" }}>Grading</label>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                {Object.entries(GRADING_ORGS).map(([org, info]) => (
+                  <button key={org} onClick={() => setForm({ ...form, gradingOrg: org })}
+                    style={{
+                      flex: 1, padding: "10px 8px", borderRadius: 8,
+                      border: form.gradingOrg === org ? `2px solid ${info.color}` : `2px solid ${P.borderLight}`,
+                      background: form.gradingOrg === org ? info.color : P.card,
+                      color: form.gradingOrg === org ? "#fff" : P.text,
+                      fontSize: 14, fontWeight: 700, fontFamily: BODY_FONT, cursor: "pointer",
+                    }}>
+                    {info.label}
+                  </button>
+                ))}
+              </div>
+              {form.gradingOrg && (
+                <div>
+                  <label style={{ fontSize: 12, color: P.soft, fontFamily: BODY_FONT, marginBottom: 6, display: "block" }}>Note {form.gradingOrg}</label>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {GRADING_ORGS[form.gradingOrg]?.grades.filter(g => g >= 5).map(g => (
+                      <button key={g} onClick={() => setForm({ ...form, grade: String(g) })}
+                        style={{
+                          padding: "6px 10px", borderRadius: 6, minWidth: 36,
+                          border: form.grade === String(g) ? `2px solid ${GRADING_ORGS[form.gradingOrg].color}` : `1px solid ${P.borderLight}`,
+                          background: form.grade === String(g) ? GRADING_ORGS[form.gradingOrg].color : P.card,
+                          color: form.grade === String(g) ? "#fff" : P.text,
+                          fontSize: 14, fontWeight: 600, fontFamily: BODY_FONT, cursor: "pointer",
+                        }}>
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                    {GRADING_ORGS[form.gradingOrg]?.grades.filter(g => g < 5).map(g => (
+                      <button key={g} onClick={() => setForm({ ...form, grade: String(g) })}
+                        style={{
+                          padding: "4px 8px", borderRadius: 6, minWidth: 32,
+                          border: form.grade === String(g) ? `2px solid ${GRADING_ORGS[form.gradingOrg].color}` : `1px solid ${P.borderLight}`,
+                          background: form.grade === String(g) ? GRADING_ORGS[form.gradingOrg].color : P.card,
+                          color: form.grade === String(g) ? "#fff" : P.soft,
+                          fontSize: 12, fontFamily: BODY_FONT, cursor: "pointer",
+                        }}>
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <Input label="Où acheté" type="text" placeholder="Amazon, eBay..." value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
           <Input label="Date d'achat" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-          <Input label="Prix d'achat (€)" type="number" placeholder="150" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-          <Input label="Quantité" type="number" placeholder="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
-          <Input label="Prix actuel (€)" type="number" placeholder="180" value={form.currentPrice} onChange={(e) => setForm({ ...form, currentPrice: e.target.value })} />
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11, color: P.soft, fontWeight: 500, letterSpacing: 0.3 }}>Type</label>
-            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={{ display: "block", width: "100%", padding: "8px 12px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 13, fontFamily: "inherit", background: "#f8fafc", color: P.text, outline: "none", boxSizing: "border-box" }}>
-              <option value="Ultra Premium Collection">Ultra Premium Collection</option><option value="Bundle">Bundle</option><option value="Elite Trainer Box">Elite Trainer Box</option><option value="Collection Box">Collection Box</option>
-            </select>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <Input label="Prix d'achat (€)" type="number" placeholder="150" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            <Input label="Quantité" type="number" placeholder="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
           </div>
+          <Input label="Prix actuel (€)" type="number" placeholder="180" value={form.currentPrice} onChange={(e) => setForm({ ...form, currentPrice: e.target.value })} />
+
+          {/* eBay tracking */}
+          <div style={{ marginBottom: 14, background: P.bg, borderRadius: 12, padding: "14px 16px", border: `1px solid ${P.borderLight}` }}>
+            <label style={{ fontSize: 10, color: P.text, fontFamily: PIXEL_FONT, letterSpacing: 0.5, marginBottom: 8, display: "flex", alignItems: "center", gap: 8, textTransform: "uppercase" }}>
+              Tracking eBay
+              <span style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft, textTransform: "none" }}>(optionnel)</span>
+            </label>
+            <input type="text" placeholder="Ex: pokemon elite trainer box 151 FR sealed" value={form.ebayQuery}
+              onChange={(e) => setForm({ ...form, ebayQuery: e.target.value })}
+              style={{
+                display: "block", width: "100%", padding: "12px 14px",
+                border: `2px solid ${P.borderLight}`, borderRadius: 8,
+                fontSize: 16, fontFamily: BODY_FONT, outline: "none", boxSizing: "border-box",
+                background: P.card, color: P.text,
+              }}
+              onFocus={(e) => (e.target.style.borderColor = P.primary)}
+              onBlur={(e) => (e.target.style.borderColor = P.borderLight)}
+            />
+            <div style={{ fontSize: 14, fontFamily: BODY_FONT, color: P.soft, marginTop: 6 }}>
+              Requête pour estimer le prix via les dernières ventes eBay.
+              {form.name && !form.ebayQuery && (
+                <button onClick={() => setForm({ ...form, ebayQuery: form.name })}
+                  style={{ background: "none", border: "none", color: P.primary, cursor: "pointer", fontFamily: BODY_FONT, fontSize: 14, textDecoration: "underline", padding: 0, marginLeft: 4 }}>
+                  Utiliser le nom ?
+                </button>
+              )}
+            </div>
+          </div>
+
           <Input label="Image URL (optionnel)" type="url" placeholder="https://..." value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
           {form.imageUrl && (
             <div style={{ marginBottom: 12, textAlign: "center" }}>
@@ -1872,8 +1763,8 @@ function WalletTab({ items, setItems, events }) {
             </div>
           )}
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={addItem} style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", background: "#1e293b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Ajouter</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "10px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "transparent", color: P.soft, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
+            <button onClick={addItem} style={{ flex: 1, padding: 12, borderRadius: 8, border: "none", background: P.primary, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: BODY_FONT, letterSpacing: 1 }}>Ajouter</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: "10px 16px", borderRadius: 8, border: `2px solid ${P.borderLight}`, background: "transparent", color: P.soft, fontSize: 14, cursor: "pointer", fontFamily: BODY_FONT }}>Annuler</button>
           </div>
         </Card>
       )}
@@ -2012,9 +1903,17 @@ const EVENT_TYPES = {
 function EventFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { title: "", date: today(), type: "release", note: "" });
   const isEdit = !!editItem;
-  const submit = () => { if (!form.title || !form.date) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const toast = useToast();
+  const submit = () => {
+    if (!form.title.trim()) { toast?.error("Le titre est requis"); return; }
+    if (form.title.length > MAX_NAME_LENGTH) { toast?.error(`Le titre ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (!form.date) { toast?.error("La date est requise"); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { toast?.error(`La note ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    onAdd({ ...form, title: form.title.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvel"} événement</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2034,7 +1933,7 @@ function EventFormModal({ onClose, onAdd, editItem }) {
       </div>
       <Input label="Note (optionnel)" type="text" placeholder="Détails..." value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2428,9 +2327,16 @@ const SPOT_TYPES = {
 function SpotFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { name: "", type: "magasin", rating: 3, note: "" });
   const isEdit = !!editItem;
-  const submit = () => { if (!form.name) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const toast = useToast();
+  const submit = () => {
+    if (!form.name.trim()) { toast?.error("Le nom est requis"); return; }
+    if (form.name.length > MAX_NAME_LENGTH) { toast?.error(`Le nom ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { toast?.error(`Le commentaire ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    onAdd({ ...form, name: form.name.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouveau"} spot</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2463,7 +2369,7 @@ function SpotFormModal({ onClose, onAdd, editItem }) {
           onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2494,7 +2400,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
   const t = SPOT_TYPES[spot.type];
 
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
@@ -2562,7 +2468,7 @@ function SpotDetailModal({ spot, purchases, onClose, onEdit }) {
           </div>
         </>
       )}
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2638,10 +2544,21 @@ const RESOURCE_TYPES = {
 
 function ResourceFormModal({ onClose, onAdd, editItem }) {
   const [form, setForm] = useState(editItem || { title: "", url: "", type: "video", note: "" });
+  const [validationError, setValidationError] = useState(null);
   const isEdit = !!editItem;
-  const submit = () => { if (!form.title || !form.url) return; onAdd({ ...form, id: isEdit ? form.id : Date.now() }); onClose(); };
+  const submit = () => {
+    if (!form.title.trim()) { setValidationError("Le titre est requis"); return; }
+    if (form.title.length > MAX_NAME_LENGTH) { setValidationError(`Le titre ne peut pas dépasser ${MAX_NAME_LENGTH} caractères`); return; }
+    if (!form.url.trim()) { setValidationError("L'URL est requise"); return; }
+    if (!isValidUrl(form.url)) { setValidationError("L'URL n'est pas valide (doit commencer par http:// ou https://)"); return; }
+    if (form.url.length > MAX_URL_LENGTH) { setValidationError("L'URL est trop longue"); return; }
+    if (form.note && form.note.length > MAX_NOTE_LENGTH) { setValidationError(`La note ne peut pas dépasser ${MAX_NOTE_LENGTH} caractères`); return; }
+    setValidationError(null);
+    onAdd({ ...form, title: form.title.trim(), url: form.url.trim(), id: isEdit ? form.id : Date.now() });
+    onClose();
+  };
   return (
-    <BottomModal onClose={onClose}>
+    <Modal onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: P.text }}>{isEdit ? "Modifier" : "Nouvelle"} ressource</div>
         <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, color: P.soft, cursor: "pointer" }}>✕</button>
@@ -2665,8 +2582,11 @@ function ResourceFormModal({ onClose, onAdd, editItem }) {
           style={{ display: "block", width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "#f8fafc", color: P.text, resize: "none", marginTop: 6 }}
           onFocus={(e) => (e.target.style.borderColor = P.primary)} onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")} />
       </div>
+      {validationError && (
+        <div style={{ background: "#fef2f2", border: `2px solid ${P.danger}`, borderRadius: 8, color: P.danger, padding: "10px 12px", marginBottom: 14, fontSize: 14, fontFamily: BODY_FONT }}>{validationError}</div>
+      )}
       <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1e293b", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{isEdit ? "Sauvegarder" : "Ajouter"}</button>
-    </BottomModal>
+    </Modal>
   );
 }
 
@@ -2766,15 +2686,8 @@ function ResourcesTab({ resources, setResources }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MAIN APP — routing + persistence
+// MAIN APP — routing + persistence (TABS imported from theme.jsx)
 // ═══════════════════════════════════════════════════════════
-const TABS = [
-  { id: "wallet", label: "COLLECTION", icon: "BAG" },
-  { id: "calendar", label: "CALENDRIER", icon: "DAY" },
-  { id: "spots", label: "SPOTS", icon: "MAP" },
-  { id: "resources", label: "GUIDES", icon: "DEX" },
-];
-
 
 // ═══════════════════════════════════════════════════════════
 // SIDEBAR COMPONENT (Desktop only) - RETRO STYLE
@@ -3130,9 +3043,8 @@ function AuthPage({ onAuth }) {
 }
 
 function AppContent() {
-  const { theme, toggleTheme, P: themeP } = useTheme() || { theme: "light", toggleTheme: () => {}, P: THEMES.light };
-  // Update global P when theme changes
-  P = themeP;
+  const { theme, toggleTheme } = useTheme() || { theme: "light", toggleTheme: () => {} };
+  // P is updated by ThemeProvider in theme.jsx via live binding
 
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -3141,7 +3053,6 @@ function AppContent() {
   const [events, setEvents] = useState(INIT.events);
   const [spots, setSpots] = useState(INIT.spots);
   const [resources, setResources] = useState(INIT.resources);
-  const [wishlist, setWishlist] = useState(INIT.wishlist);
   const [loaded, setLoaded] = useState(false);
   const isDesktop = useIsDesktop();
 
@@ -3176,13 +3087,15 @@ function AppContent() {
           id: i.id,
           name: i.name,
           type: i.type,
+          category: i.category || "sealed",
+          gradingOrg: i.grading_org || null,
+          grade: i.grade ? Number(i.grade) : null,
           currentPrice: Number(i.current_price) || 0,
           transactions: i.transactions || [],
           sold: i.sold || [],
           priceHistory: i.price_history || [],
           targetPrice: i.target_price ? Number(i.target_price) : null,
           imageUrl: i.image_url || null,
-          // eBay market price fields
           ebayQuery: i.ebay_query || null,
           marketPrice: i.market_price ? Number(i.market_price) : null,
           marketPriceMin: i.market_price_min ? Number(i.market_price_min) : null,
@@ -3252,6 +3165,7 @@ function AppContent() {
     const { data: dbItems } = await supabase.from("items").select("id").eq("user_id", userId);
     const dbIds = new Set((dbItems || []).map(i => i.id));
     const newIds = new Set(newItems.map(i => i.id));
+    const idMap = new Map();
 
     // Delete removed items
     for (const id of dbIds) {
@@ -3266,13 +3180,15 @@ function AppContent() {
         await supabase.from("items").update({
           name: item.name,
           type: item.type,
+          category: item.category || "sealed",
+          grading_org: item.gradingOrg || null,
+          grade: item.grade || null,
           current_price: item.currentPrice,
           transactions: item.transactions,
           sold: item.sold || [],
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
-          // eBay fields
           ebay_query: item.ebayQuery || null,
           market_price: item.marketPrice || null,
           market_price_min: item.marketPriceMin || null,
@@ -3285,13 +3201,15 @@ function AppContent() {
           user_id: userId,
           name: item.name,
           type: item.type,
+          category: item.category || "sealed",
+          grading_org: item.gradingOrg || null,
+          grade: item.grade || null,
           current_price: item.currentPrice,
           transactions: item.transactions,
           sold: item.sold || [],
           price_history: item.priceHistory || [],
           target_price: item.targetPrice || null,
           image_url: item.imageUrl || null,
-          // eBay fields
           ebay_query: item.ebayQuery || null,
           market_price: item.marketPrice || null,
           market_price_min: item.marketPriceMin || null,
@@ -3300,10 +3218,14 @@ function AppContent() {
           market_price_updated_at: item.marketPriceUpdatedAt || null,
         }).select().single();
         if (data) {
-          // Update local id with DB id
-          item.id = data.id;
+          idMap.set(item.id, data.id);
         }
       }
+    }
+
+    // Update local IDs immutably
+    if (idMap.size > 0) {
+      setItems(prev => prev.map(i => idMap.has(i.id) ? { ...i, id: idMap.get(i.id) } : i));
     }
   }, [session, loaded]);
 
@@ -3315,6 +3237,7 @@ function AppContent() {
     const { data: dbEvents } = await supabase.from("events").select("id").eq("user_id", userId);
     const dbIds = new Set((dbEvents || []).map(e => e.id));
     const newIds = new Set(newEvents.map(e => e.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3338,8 +3261,12 @@ function AppContent() {
           type: event.type,
           note: event.note,
         }).select().single();
-        if (data) event.id = data.id;
+        if (data) idMap.set(event.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setEvents(prev => prev.map(e => idMap.has(e.id) ? { ...e, id: idMap.get(e.id) } : e));
     }
   }, [session, loaded]);
 
@@ -3351,6 +3278,7 @@ function AppContent() {
     const { data: dbSpots } = await supabase.from("spots").select("id").eq("user_id", userId);
     const dbIds = new Set((dbSpots || []).map(s => s.id));
     const newIds = new Set(newSpots.map(s => s.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3374,8 +3302,12 @@ function AppContent() {
           rating: spot.rating,
           note: spot.note,
         }).select().single();
-        if (data) spot.id = data.id;
+        if (data) idMap.set(spot.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setSpots(prev => prev.map(s => idMap.has(s.id) ? { ...s, id: idMap.get(s.id) } : s));
     }
   }, [session, loaded]);
 
@@ -3387,6 +3319,7 @@ function AppContent() {
     const { data: dbResources } = await supabase.from("resources").select("id").eq("user_id", userId);
     const dbIds = new Set((dbResources || []).map(r => r.id));
     const newIds = new Set(newResources.map(r => r.id));
+    const idMap = new Map();
 
     for (const id of dbIds) {
       if (!newIds.has(id)) {
@@ -3410,8 +3343,12 @@ function AppContent() {
           type: resource.type,
           note: resource.note,
         }).select().single();
-        if (data) resource.id = data.id;
+        if (data) idMap.set(resource.id, data.id);
       }
+    }
+
+    if (idMap.size > 0) {
+      setResources(prev => prev.map(r => idMap.has(r.id) ? { ...r, id: idMap.get(r.id) } : r));
     }
   }, [session, loaded]);
 
