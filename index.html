@@ -2,13 +2,76 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Hexuo</title>
-    <meta name="description" content="Hexuo — collecte, suit, organise." />
+    <meta name="description" content="Hexuo — suivi de collection TCG : prix, P&L, grading, eBay tracking" />
+    <meta name="theme-color" content="#5c6bc0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hexuo" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
       body { min-height: 100vh; }
+
+      /* Global animations */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(100%); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateY(-12px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .animate-fade-in-up { animation: fadeInUp 0.35s ease-out both; }
+      .animate-fade-in { animation: fadeIn 0.3s ease-out both; }
+      .animate-slide-in-right { animation: slideInRight 0.3s ease-out both; }
+      .animate-scale-in { animation: scaleIn 0.25s ease-out both; }
+      .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+      /* Stagger animations for lists */
+      .stagger-1 { animation-delay: 0.03s; }
+      .stagger-2 { animation-delay: 0.06s; }
+      .stagger-3 { animation-delay: 0.09s; }
+      .stagger-4 { animation-delay: 0.12s; }
+      .stagger-5 { animation-delay: 0.15s; }
+      .stagger-6 { animation-delay: 0.18s; }
+      .stagger-7 { animation-delay: 0.21s; }
+      .stagger-8 { animation-delay: 0.24s; }
+
+      /* Smooth scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
     </style>
   </head>
   <body>

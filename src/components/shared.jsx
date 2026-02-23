@@ -82,9 +82,9 @@ export function AddButton({ onClick }) {
   );
 }
 
-export function Card({ children, onClick, style: extra }) {
+export function Card({ children, onClick, style: extra, className }) {
   return (
-    <div onClick={onClick}
+    <div onClick={onClick} className={className}
       style={{
         background: P.card,
         border: `2px solid ${P.borderLight}`,
@@ -106,6 +106,7 @@ export function Modal({ onClose, children, title }) {
 
   return (
     <div
+      className="animate-fade-in"
       style={{
         position: "fixed", inset: 0,
         background: "rgba(55, 71, 79, 0.6)",
@@ -119,6 +120,7 @@ export function Modal({ onClose, children, title }) {
       onClick={onClose}
     >
       <div
+        className={isDesktop ? "animate-scale-in" : "animate-slide-up"}
         style={{
           background: P.card,
           border: `2px solid ${P.borderLight}`,
