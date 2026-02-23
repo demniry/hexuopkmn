@@ -94,7 +94,7 @@ export function ToastProvider({ children }) {
               fontFamily: BODY_FONT,
               fontSize: 18,
               boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-              animation: "slideIn 0.3s ease",
+              animation: "toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
               display: "flex",
               alignItems: "center",
               gap: 10,
@@ -109,9 +109,9 @@ export function ToastProvider({ children }) {
         ))}
       </div>
       <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+        @keyframes toastIn {
+          from { transform: translateY(-12px) scale(0.95); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
         }
       `}</style>
     </ToastContext.Provider>

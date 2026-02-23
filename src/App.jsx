@@ -1062,6 +1062,14 @@ function WalletTab({ items, setItems, events }) {
 
   const hasAnySales = items.some(i => i.sold && i.sold.length > 0);
 
+  // Advanced KPIs
+  const totalItems = items.reduce((s, i) => s + totalQty(i), 0);
+  const avgItemValue = totalItems > 0 ? totalCur / totalItems : 0;
+  const roi = totalBuy > 0 ? ((totalCur - totalBuy) / totalBuy * 100) : 0;
+  const itemsWithEbay = items.filter(i => i.marketPrice);
+  const totalMarketValue = itemsWithEbay.reduce((s, i) => s + i.marketPrice * totalQty(i), 0);
+  const bestSale = items.flatMap(i => (i.sold || []).map(s => ({ ...s, itemName: i.name }))).sort((a, b) => b.netAmount - a.netAmount)[0];
+
   // Fetch eBay price for a query
   const fetchEbayPrice = async (query) => {
     if (!query || query.trim().length < 3) return null;
@@ -1231,6 +1239,45 @@ function WalletTab({ items, setItems, events }) {
   // View mode state
   const [viewMode, setViewMode] = useState("list"); // list, grid
   const [quickAdd, setQuickAdd] = useState({ show: false, name: "", price: "" });
+  const [refreshingAll, setRefreshingAll] = useState(false);
+
+  // Global eBay price refresh
+  const refreshAllPrices = async () => {
+    const itemsWithQuery = items.filter(i => i.ebayQuery);
+    if (itemsWithQuery.length === 0) {
+      toast?.error("Aucun item avec une requête eBay");
+      return;
+    }
+    setRefreshingAll(true);
+    let updated = 0;
+    let errors = 0;
+    for (const item of itemsWithQuery) {
+      try {
+        const data = await fetchEbayPrice(item.ebayQuery);
+        if (data) {
+          const updatedItem = {
+            ...item,
+            marketPrice: data.median,
+            marketPriceMin: data.min,
+            marketPriceMax: data.max,
+            marketPriceSalesCount: data.salesCount,
+            marketPriceUpdatedAt: data.updatedAt,
+          };
+          setItems(prev => prev.map(i => i.id === item.id ? updatedItem : i));
+          updated++;
+        } else {
+          errors++;
+        }
+      } catch {
+        errors++;
+      }
+      // Small delay between requests to avoid rate limiting
+      await new Promise(r => setTimeout(r, 500));
+    }
+    setRefreshingAll(false);
+    if (updated > 0) toast?.success(`${updated} prix mis à jour !`);
+    if (errors > 0) toast?.error(`${errors} erreur(s) lors du refresh`);
+  };
 
   // Quick add function
   const handleQuickAdd = () => {
@@ -1273,6 +1320,17 @@ function WalletTab({ items, setItems, events }) {
           <button onClick={exportPDF} style={{ padding: "8px 14px", border: `2px solid ${P.borderLight}`, borderRadius: 8, background: P.card, color: P.text, fontSize: 14, fontFamily: BODY_FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             📄 Export PDF
           </button>
+          {items.some(i => i.ebayQuery) && (
+            <button onClick={refreshAllPrices} disabled={refreshingAll}
+              style={{
+                padding: "8px 14px", border: `2px solid #0284c7`, borderRadius: 8,
+                background: refreshingAll ? "#94a3b8" : "#0284c7", color: "#fff",
+                fontSize: 14, fontFamily: BODY_FONT, cursor: refreshingAll ? "wait" : "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+              {refreshingAll ? "Refresh..." : "🔄 Prix eBay"}
+            </button>
+          )}
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", border: `2px solid ${P.borderLight}`, borderRadius: 8, overflow: "hidden" }}>
             <button onClick={() => setViewMode("list")} style={{ padding: "8px 12px", border: "none", background: viewMode === "list" ? P.primary : P.card, color: viewMode === "list" ? "#fff" : P.text, cursor: "pointer", fontSize: 14 }}>☰</button>
@@ -1282,7 +1340,7 @@ function WalletTab({ items, setItems, events }) {
       )}
 
       {/* RETRO OVERVIEW CARD - Gradient style */}
-      <div style={{
+      <div className="animate-fade-in-up" style={{
         background: `linear-gradient(135deg, ${P.primary} 0%, #4a5ab8 50%, #3949ab 100%)`,
         border: `3px solid ${P.border}`,
         padding: "28px 24px",
@@ -1320,7 +1378,7 @@ function WalletTab({ items, setItems, events }) {
       </div>
 
       {/* Stats row - Modern retro boxes */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+      <div className="animate-fade-in-up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20, animationDelay: "0.08s" }}>
         {[
           { label: "ITEMS", value: items.reduce((s, i) => s + totalQty(i), 0), color: P.text, bg: P.card, accent: P.primary },
           { label: "PROFIT", value: items.filter((i) => getItemPnL(i) >= 0).length, color: "#fff", bg: P.success, accent: P.success },
@@ -1414,6 +1472,36 @@ function WalletTab({ items, setItems, events }) {
             )}
           </div>
         </Card>
+      )}
+
+      {/* KPIs row */}
+      {items.length > 2 && (
+        <div className="animate-fade-in-up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20, animationDelay: "0.2s" }}>
+          <div style={{ background: P.card, border: `2px solid ${P.borderLight}`, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 4 }}>ROI</div>
+            <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: roi >= 0 ? P.success : P.danger }}>
+              {roi >= 0 ? "+" : ""}{roi.toFixed(1)}%
+            </div>
+          </div>
+          <div style={{ background: P.card, border: `2px solid ${P.borderLight}`, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 4 }}>VAL. MOYENNE</div>
+            <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: P.text }}>{fmt(avgItemValue)}</div>
+          </div>
+          {itemsWithEbay.length > 0 && (
+            <div style={{ background: P.card, border: `2px solid ${P.borderLight}`, borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 4 }}>VALEUR MARCHE</div>
+              <div style={{ fontSize: 22, fontFamily: BODY_FONT, fontWeight: 700, color: P.primary }}>{fmt(totalMarketValue)}</div>
+              <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft }}>{itemsWithEbay.length} items trackés</div>
+            </div>
+          )}
+          {bestSale && (
+            <div style={{ background: P.card, border: `2px solid ${P.borderLight}`, borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ fontSize: 7, fontFamily: PIXEL_FONT, color: P.soft, letterSpacing: 0.5, marginBottom: 4 }}>MEILLEURE VENTE</div>
+              <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.success }}>{fmt(bestSale.netAmount)}</div>
+              <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bestSale.itemName}</div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Category filter tabs */}
@@ -1566,41 +1654,75 @@ function WalletTab({ items, setItems, events }) {
         /* GRID VIEW - Showcase mode */
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-          gap: 12,
+          gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))",
+          gap: 14,
           marginBottom: 18
         }}>
-          {filteredItems.map((item) => {
+          {filteredItems.map((item, idx) => {
             const realPnL = getItemPnL(item);
             const isUp = realPnL >= 0;
+            const pnlPct = getItemPnLPct(item);
+            const hasSales = item.sold && item.sold.length > 0;
+            const soldQty = hasSales ? item.sold.reduce((s, sale) => s + sale.quantity, 0) : 0;
+            const isFullySold = hasSales && (totalQty(item) - soldQty) === 0;
             return (
               <div
                 key={item.id}
+                className={`animate-scale-in stagger-${Math.min(idx + 1, 8)}`}
                 onClick={() => setSelectedId(item.id)}
                 style={{
                   background: P.card,
                   border: `2px solid ${P.borderLight}`,
-                  borderRadius: 12,
+                  borderRadius: 14,
                   overflow: "hidden",
                   cursor: "pointer",
-                  transition: "all 0.15s ease",
+                  transition: "all 0.2s ease",
+                  opacity: isFullySold ? 0.65 : 1,
+                  position: "relative",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px) scale(1.02)"; e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.15)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
               >
+                {/* P&L indicator stripe */}
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: isUp ? P.success : P.danger }} />
                 {/* Image */}
-                <div style={{ width: "100%", aspectRatio: "1", background: P.bg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <div style={{ width: "100%", aspectRatio: "1", background: P.bg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => e.target.style.display = "none"} />
+                    <img src={item.imageUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" onError={(e) => e.target.style.display = "none"} />
                   ) : (
                     <Pokeball size={48} />
                   )}
+                  {/* Category badge */}
+                  <div style={{ position: "absolute", top: 6, left: 6 }}>
+                    <TypeBadge type={item.type} grade={item.grade} gradingOrg={item.gradingOrg} />
+                  </div>
+                  {/* P&L badge */}
+                  <div style={{
+                    position: "absolute", bottom: 6, right: 6,
+                    background: isUp ? P.success : P.danger, color: "#fff",
+                    padding: "3px 8px", borderRadius: 6,
+                    fontSize: 13, fontFamily: BODY_FONT, fontWeight: 700,
+                  }}>
+                    {isUp ? "+" : ""}{pnlPct.toFixed(0)}%
+                  </div>
+                  {isFullySold && (
+                    <div style={{ position: "absolute", top: 6, right: 6, background: P.success, color: "#fff", padding: "2px 6px", borderRadius: 4, fontSize: 8, fontFamily: PIXEL_FONT }}>
+                      VENDU
+                    </div>
+                  )}
                 </div>
                 {/* Info */}
-                <div style={{ padding: "10px 12px" }}>
-                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: P.text, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
-                  <div style={{ fontSize: 16, fontFamily: BODY_FONT, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div>
-                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: isUp ? P.success : P.danger }}>{isUp ? "+" : ""}{getItemPnLPct(item).toFixed(1)}%</div>
+                <div style={{ padding: "12px 12px 14px" }}>
+                  <div style={{ fontSize: 14, fontFamily: BODY_FONT, fontWeight: 600, color: P.text, marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <div style={{ fontSize: 18, fontFamily: BODY_FONT, fontWeight: 700, color: P.text }}>{fmt(item.currentPrice)}</div>
+                    {totalQty(item) > 1 && <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.soft }}>×{totalQty(item)}</div>}
+                  </div>
+                  {item.marketPrice && (
+                    <div style={{ fontSize: 12, fontFamily: BODY_FONT, color: P.primary, marginTop: 4 }}>
+                      eBay: {fmt(item.marketPrice)}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -1614,7 +1736,7 @@ function WalletTab({ items, setItems, events }) {
           gap: 10,
           marginBottom: 18
         }}>
-          {filteredItems.map((item) => {
+          {filteredItems.map((item, idx) => {
             const realPnL = getItemPnL(item);
             const realPnLPct = getItemPnLPct(item);
             const isUp = realPnL >= 0;
@@ -1623,13 +1745,14 @@ function WalletTab({ items, setItems, events }) {
             const remainingQty = totalQty(item) - soldQty;
             const isFullySold = remainingQty === 0;
             return (
-              <Card key={item.id} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
+              <Card key={item.id} className={`animate-fade-in-up stagger-${Math.min(idx + 1, 8)}`} onClick={() => setSelectedId(item.id)} style={{ opacity: isFullySold ? 0.7 : 1 }}>
                 <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                   {/* Item thumbnail */}
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
                       alt={item.name}
+                      loading="lazy"
                       style={{
                         width: 56,
                         height: 56,
